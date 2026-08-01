@@ -42,15 +42,24 @@ if ! command -v docker >/dev/null 2>&1; then
     exit 1
 fi
 
+if ! docker info >/dev/null 2>&1; then
+    echo "Fehler: Der Docker-Daemon ist nicht erreichbar." >&2
+    exit 1
+fi
+
 if [[ ! -x "$ROOT_DIR/gradlew" ]]; then
     echo "Fehler: $ROOT_DIR/gradlew fehlt oder ist nicht ausführbar." >&2
     exit 1
 fi
 
-docker volume inspect "$CACHE_VOLUME" >/dev/null 2>&1     || docker volume create "$CACHE_VOLUME" >/dev/null
+docker volume inspect "$CACHE_VOLUME" >/dev/null 2>&1 \
+    || docker volume create "$CACHE_VOLUME" >/dev/null
 
 echo "Baue Builder-Image: $IMAGE_NAME"
-docker build     --file "$ROOT_DIR/docker/Dockerfile"     --tag "$IMAGE_NAME"     "$ROOT_DIR/docker"
+docker build \
+    --file "$ROOT_DIR/docker/Dockerfile" \
+    --tag "$IMAGE_NAME" \
+    "$ROOT_DIR/docker"
 
 tasks=(
     ":mobile:assemble${gradle_variant}"
@@ -58,17 +67,40 @@ tasks=(
 )
 
 echo "Baue Android-APKs (${BUILD_VARIANT})"
-docker run --rm     --env "LOCAL_UID=$(id -u)"     --env "LOCAL_GID=$(id -g)"     --env GRADLE_USER_HOME=/gradle-cache     --volume "$CACHE_VOLUME:/gradle-cache"     --volume "$ROOT_DIR:/workspace"     --workdir /workspace     "$IMAGE_NAME"     ./gradlew         --no-daemon         --build-cache         --console=plain         "${tasks[@]}"
+docker run --rm \
+    --env "LOCAL_UID=$(id -u)" \
+    --env "LOCAL_GID=$(id -g)" \
+    --env GRADLE_USER_HOME=/gradle-cache \
+    --volume "$CACHE_VOLUME:/gradle-cache" \
+    --volume "$ROOT_DIR:/workspace" \
+    --workdir /workspace \
+    "$IMAGE_NAME" \
+    ./gradlew \
+        --no-daemon \
+        --build-cache \
+        --console=plain \
+        "${tasks[@]}"
 
 for module in mobile tv; do
     source_dir="$ROOT_DIR/$module/build/outputs/apk/$output_variant"
     target_dir="$ROOT_DIR/dist/$module"
 
-    rm -rf "$target_dir"
     mkdir -p "$target_dir"
 
+    if [[ "$target_dir" != "$ROOT_DIR/dist/$module" ]]; then
+        echo "Fehler: Unerwartetes Zielverzeichnis: $target_dir" >&2
+        exit 1
+    fi
+
+    find "$target_dir" -maxdepth 1 -type f -name '*.apk' -delete
+
+    if [[ ! -d "$source_dir" ]]; then
+        echo "Fehler: APK-Ausgabeverzeichnis fehlt: $source_dir" >&2
+        exit 1
+    fi
+
     mapfile -d '' apks < <(
-        find "$source_dir" -type f -name '*.apk' -print0 2>/dev/null
+        find "$source_dir" -maxdepth 1 -type f -name '*.apk' -print0
     )
 
     if (( ${#apks[@]} == 0 )); then

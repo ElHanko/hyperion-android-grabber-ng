@@ -26,7 +26,12 @@ fi
 user_name="$(getent passwd "$LOCAL_UID" | cut -d: -f1 || true)"
 if [[ -z "$user_name" ]]; then
     user_name="android-builder"
-    useradd         --create-home         --uid "$LOCAL_UID"         --gid "$LOCAL_GID"         --shell /bin/bash         "$user_name"
+    useradd \
+        --create-home \
+        --uid "$LOCAL_UID" \
+        --gid "$LOCAL_GID" \
+        --shell /bin/bash \
+        "$user_name"
 fi
 
 home_dir="$(getent passwd "$LOCAL_UID" | cut -d: -f6)"
@@ -38,4 +43,8 @@ if [[ "$cache_uid" != "$LOCAL_UID" || "$cache_gid" != "$LOCAL_GID" ]]; then
     chown -R "$LOCAL_UID:$LOCAL_GID" "$GRADLE_USER_HOME"
 fi
 
-exec gosu "$LOCAL_UID:$LOCAL_GID"     env         HOME="$home_dir"         GRADLE_USER_HOME="$GRADLE_USER_HOME"         "$@"
+exec gosu "$LOCAL_UID:$LOCAL_GID" \
+    env \
+        HOME="$home_dir" \
+        GRADLE_USER_HOME="$GRADLE_USER_HOME" \
+        "$@"
