@@ -3,7 +3,6 @@ package com.abrenoch.hyperiongrabber.tv.views;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
-import androidx.leanback.widget.GuidanceStylist;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.ImageView;
@@ -13,7 +12,7 @@ import android.widget.RelativeLayout;
  * Relative layout implementation that lays out child views based on provided keyline percent(
  * distance of TitleView baseline from the top).
  *
- * Repositioning child views in PreDraw callback in {@link GuidanceStylist} was interfering with
+ * Repositioning child views in the GuidanceStylist PreDraw callback was interfering with
  * fragment transition. To avoid that, we do that in the onLayout pass.
  *
  * Nino: Copied from Leanback code, changed to align icon bottom with description bottom
