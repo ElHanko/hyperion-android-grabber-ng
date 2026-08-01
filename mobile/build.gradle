@@ -27,7 +27,13 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    lint {
+        disable += 'ExpiredTargetSdkVersion'
+    }
 }
+
+apply from: rootProject.file('gradle/release-signing.gradle')
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')

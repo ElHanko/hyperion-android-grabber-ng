@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IMAGE_NAME="${IMAGE_NAME:-hyperion-android-grabber-ng-builder}"
 CACHE_VOLUME="${CACHE_VOLUME:-hyperion-android-grabber-ng-gradle-cache}"
 BUILD_VARIANT="${1:-debug}"
+SIGNING_DIR="$ROOT_DIR/signing"
 
 usage() {
     cat <<'HELP'
@@ -25,6 +26,16 @@ case "$BUILD_VARIANT" in
     release)
         gradle_variant="Release"
         output_variant="release"
+
+        if [[ ! -f "$SIGNING_DIR/signing.properties" ]]; then
+            echo "Fehler: Release-Signierung fehlt: $SIGNING_DIR/signing.properties" >&2
+            exit 1
+        fi
+
+        if [[ ! -f "$SIGNING_DIR/hyperion-ng-release.p12" ]]; then
+            echo "Fehler: Release-Keystore fehlt: $SIGNING_DIR/hyperion-ng-release.p12" >&2
+            exit 1
+        fi
         ;;
     -h|--help)
         usage
@@ -66,13 +77,24 @@ tasks=(
     ":tv:assemble${gradle_variant}"
 )
 
+docker_mounts=(
+    --volume "$CACHE_VOLUME:/gradle-cache"
+    --volume "$ROOT_DIR:/workspace"
+)
+
+if [[ "$BUILD_VARIANT" == "release" ]]; then
+    docker_mounts+=(
+        --volume "$SIGNING_DIR:/signing:ro"
+        --volume "$SIGNING_DIR:/workspace/signing:ro"
+    )
+fi
+
 echo "Baue Android-APKs (${BUILD_VARIANT})"
 docker run --rm \
     --env "LOCAL_UID=$(id -u)" \
     --env "LOCAL_GID=$(id -g)" \
     --env GRADLE_USER_HOME=/gradle-cache \
-    --volume "$CACHE_VOLUME:/gradle-cache" \
-    --volume "$ROOT_DIR:/workspace" \
+    "${docker_mounts[@]}" \
     --workdir /workspace \
     "$IMAGE_NAME" \
     ./gradlew \

@@ -30,7 +30,13 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    lint {
+        disable += 'ExpiredTargetSdkVersion'
+    }
 }
+
+apply from: rootProject.file('gradle/release-signing.gradle')
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
