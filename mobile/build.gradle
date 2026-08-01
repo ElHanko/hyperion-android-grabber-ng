@@ -2,8 +2,6 @@ plugins {
     id 'com.android.application'
 }
 
-apply from: project(':common').projectDir.absolutePath + '/variables.gradle'
-
 android {
     namespace = 'com.abrenoch.hyperiongrabber.mobile'
     compileSdk = 36
@@ -34,7 +32,9 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     api project(path: ':common')
-    implementation "com.android.support:appcompat-v7:$android_support_version"
-    implementation "com.android.support:support-v4:$android_support_version"
-    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+    implementation 'androidx.core:core:1.16.0'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+    implementation 'androidx.preference:preference:1.2.1'
 }

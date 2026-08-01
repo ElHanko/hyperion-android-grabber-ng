@@ -11,9 +11,9 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -95,7 +95,9 @@ public class MainActivity extends AppCompatActivity implements ImageView.OnClick
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_MEDIA_PROJECTION) {
             if (resultCode != Activity.RESULT_OK) {
-                Toast.makeText(this, R.string.toast_must_give_permission, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this,
+                        com.abrenoch.hyperiongrabber.common.R.string.toast_must_give_permission,
+                        Toast.LENGTH_SHORT).show();
                 if (mRecorderRunning) {
                     stopScreenRecorder();
                 }
@@ -118,11 +120,9 @@ public class MainActivity extends AppCompatActivity implements ImageView.OnClick
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.settings:
-                Intent intent=new Intent(this,SettingsActivity.class);
-                startActivity(intent);
-                break;
+        if (item.getItemId() == R.id.settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
         }
         return super.onOptionsItemSelected(item);
     }

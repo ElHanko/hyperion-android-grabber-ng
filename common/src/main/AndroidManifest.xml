@@ -28,6 +28,7 @@
 
         <receiver
             android:name=".HyperionGrabberBootReceiver"
+            android:exported="true"
             android:label="HyperionGrabberBootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

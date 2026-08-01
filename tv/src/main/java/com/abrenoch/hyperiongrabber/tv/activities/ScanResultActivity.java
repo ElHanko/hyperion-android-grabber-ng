@@ -13,12 +13,11 @@ import android.widget.TextView;
 import com.abrenoch.hyperiongrabber.common.network.Hyperion;
 import com.abrenoch.hyperiongrabber.common.util.Preferences;
 import com.abrenoch.hyperiongrabber.tv.R;
+import com.abrenoch.hyperiongrabber.tv.databinding.ActivityScanResultBinding;
 
 import java.io.IOException;
 import java.util.Random;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import nl.dionsegijn.konfetti.KonfettiView;
 import nl.dionsegijn.konfetti.models.Shape;
 import nl.dionsegijn.konfetti.models.Size;
@@ -29,10 +28,10 @@ public class ScanResultActivity extends LeanbackActivity {
     public static final String EXTRA_RESULT_PORT = "EXTRA_RESULT_PORT";
 
 
-    @BindView(R.id.konfetti) KonfettiView konfettiView;
-    @BindView(R.id.scanResultDescriptionText) TextView descriptionText;
-    @BindView(R.id.scanResultHostName) TextView hostNameText;
-    @BindView(R.id.scanResultEmojiText) TextView emojiText;
+    private KonfettiView konfettiView;
+    private TextView descriptionText;
+    private TextView hostNameText;
+    private TextView emojiText;
     private String hostName;
     private int port;
 
@@ -45,19 +44,26 @@ public class ScanResultActivity extends LeanbackActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_scan_result);
-        ButterKnife.bind(this);
+        ActivityScanResultBinding binding = ActivityScanResultBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        konfettiView = binding.konfetti;
+        descriptionText = binding.scanResultDescriptionText;
+        hostNameText = binding.scanResultHostName;
+        emojiText = binding.scanResultEmojiText;
 
         emojiText.setText("\uD83D\uDC4F"); // 👏Clapping Hands
         String partyPopper = "\uD83C\uDF89";
-        descriptionText.setText(getResources().getString(R.string.scan_result_description, partyPopper));
+        descriptionText.setText(getResources().getString(
+                com.abrenoch.hyperiongrabber.common.R.string.scan_result_description,
+                partyPopper));
         Bundle extras = getIntent().getExtras();
         if (extras != null){
             hostName = extras.getString(EXTRA_RESULT_HOST_NAME);
             port = Integer.parseInt(extras.getString(EXTRA_RESULT_PORT));
             hostNameText.setText(hostName);
         } else {
-            hostNameText.setText(R.string.error_no_host_name_extra);
+            hostNameText.setText(
+                    com.abrenoch.hyperiongrabber.common.R.string.error_no_host_name_extra);
         }
 
         // Animate the appearance of the scan result
@@ -115,8 +121,8 @@ public class ScanResultActivity extends LeanbackActivity {
     /** Save scan result to Preferences */
     private void saveResult() {
         Preferences prefs = new Preferences(getApplicationContext());
-        prefs.putString(R.string.pref_key_host, hostName);
-        prefs.putInt(R.string.pref_key_port, port);
+        prefs.putString(com.abrenoch.hyperiongrabber.common.R.string.pref_key_host, hostName);
+        prefs.putInt(com.abrenoch.hyperiongrabber.common.R.string.pref_key_port, port);
     }
 
     private void startKonfetti() {

@@ -3,8 +3,6 @@ plugins {
     id 'com.google.protobuf'
 }
 
-apply from: project(':common').projectDir.absolutePath + '/variables.gradle'
-
 android {
     namespace = 'com.abrenoch.hyperiongrabber.common'
     compileSdk = 36
@@ -12,7 +10,7 @@ android {
 
     defaultConfig {
         minSdk = 21
-        testInstrumentationRunner = 'android.support.test.runner.AndroidJUnitRunner'
+        testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
         vectorDrawables.useSupportLibrary = true
     }
 
@@ -30,15 +28,17 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "com.android.support:support-v4:$android_support_version"
-    implementation "com.android.support:support-vector-drawable:$android_support_version"
-    implementation "com.android.support:appcompat-v7:$android_support_version"
-    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+    implementation 'androidx.annotation:annotation:1.9.1'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+    implementation 'androidx.core:core:1.16.0'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+    implementation 'androidx.preference:preference:1.2.1'
     implementation 'com.google.protobuf:protobuf-javalite:4.35.1'
 
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    androidTestImplementation 'androidx.test:runner:1.7.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
 }
 
 protobuf {
