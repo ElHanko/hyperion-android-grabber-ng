@@ -1,1 +1,25 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == 'com.google.protobuf') {
+                useModule("com.google.protobuf:protobuf-gradle-plugin:${requested.version}")
+            }
+        }
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'hyperion-android-grabber-ng'
+
 include ':mobile', ':tv', ':common'

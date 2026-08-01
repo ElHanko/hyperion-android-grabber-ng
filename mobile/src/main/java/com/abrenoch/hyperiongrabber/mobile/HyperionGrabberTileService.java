@@ -9,9 +9,9 @@ import android.os.Build;
 import android.os.Handler;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
-import android.support.annotation.RequiresApi;
-import android.support.v4.app.TaskStackBuilder;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.annotation.RequiresApi;
+import androidx.core.app.TaskStackBuilder;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.widget.Toast;
 
@@ -126,7 +126,10 @@ public class HyperionGrabberTileService extends TileService {
      */
     private boolean startSetupIfNeeded(){
         Preferences preferences = new Preferences(getApplicationContext());
-        if (TextUtils.isEmpty(preferences.getString(R.string.pref_key_host, null)) || preferences.getInt(R.string.pref_key_port, -1) == -1){
+        if (TextUtils.isEmpty(preferences.getString(
+                com.abrenoch.hyperiongrabber.common.R.string.pref_key_host, null))
+                || preferences.getInt(
+                com.abrenoch.hyperiongrabber.common.R.string.pref_key_port, -1) == -1) {
             Intent settingsIntent = new Intent(this, SettingsActivity.class);
             settingsIntent.putExtra(SettingsActivity.EXTRA_SHOW_TOAST_KEY, SettingsActivity.EXTRA_SHOW_TOAST_SETUP_REQUIRED_FOR_QUICK_TILE);
             settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

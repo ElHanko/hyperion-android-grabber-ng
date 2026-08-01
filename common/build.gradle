@@ -1,86 +1,56 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'com.google.protobuf'
-
-apply from: project(':common').projectDir.absolutePath + '/variables.gradle'
-
-
-buildscript {
-    repositories {
-        google()
-        jcenter()
-    }
-
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.1'
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.6'
-    }
-}
-
-repositories {
-    jcenter()
-    maven {
-        url 'https://maven.google.com'
-    }
-}
-
-sourceSets {
-    main.java.srcDirs += "${protobuf.generatedFilesBaseDir}/main/java"
+plugins {
+    id 'com.android.library'
+    id 'com.google.protobuf'
 }
 
 android {
-    compileSdkVersion 26
+    namespace = 'com.abrenoch.hyperiongrabber.common'
+    compileSdk = 36
+    buildToolsVersion = '36.0.0'
+
     defaultConfig {
-        minSdkVersion 19
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        minSdk = 21
+        testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
         vectorDrawables.useSupportLibrary = true
-        multiDexEnabled true
     }
+
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled = false
         }
     }
+
     compileOptions {
-        targetCompatibility JavaVersion.VERSION_1_8
-        sourceCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "com.android.support:support-v4:$android_support_version"
-    implementation "com.android.support:support-vector-drawable:$android_support_version"
-    implementation "com.android.support:appcompat-v7:$android_support_version"
-    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
-    implementation 'com.google.protobuf:protobuf-lite:3.0.0'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.1'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.annotation:annotation:1.9.1'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+    implementation 'androidx.core:core:1.16.0'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+    implementation 'androidx.preference:preference:1.2.1'
+    implementation 'com.google.protobuf:protobuf-javalite:4.35.1'
+
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test:runner:1.7.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
 }
 
 protobuf {
     protoc {
-        // You still need protoc like in the non-Android case
-        artifact = 'com.google.protobuf:protoc:3.0.0'
-    }
-    plugins {
-        javalite {
-            // The codegen for lite comes as a separate artifact
-            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
-        }
+        artifact = 'com.google.protobuf:protoc:4.35.1'
     }
     generateProtoTasks {
-        all().each { task ->
+        all().configureEach { task ->
             task.builtins {
-                // In most cases you don't need the full Java output
-                // if you use the lite output.
-                remove java
-            }
-            task.plugins {
-                javalite {}
+                java {
+                    option 'lite'
+                }
             }
         }
     }

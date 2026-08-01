@@ -12,10 +12,10 @@ import android.graphics.Color;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.RequiresApi;
-import android.support.v4.app.ActivityOptionsCompat;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatDelegate;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
@@ -66,8 +66,10 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
     private boolean initIfConfigured() {
         // Do we have a valid server config?
         Preferences preferences = new Preferences(getApplicationContext());
-        String host = preferences.getString(R.string.pref_key_host, null);
-        int port = preferences.getInt(R.string.pref_key_port, -1);
+        String host = preferences.getString(
+                com.abrenoch.hyperiongrabber.common.R.string.pref_key_host, null);
+        int port = preferences.getInt(
+                com.abrenoch.hyperiongrabber.common.R.string.pref_key_port, -1);
 
         if (host == null || port == -1){
             return false;
@@ -115,19 +117,16 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
 
     @Override
     public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.power_toggle:
-                if (!mRecorderRunning) {
-                    startActivityForResult(mMediaProjectionManager.createScreenCaptureIntent(),
-                            REQUEST_MEDIA_PROJECTION);
-                } else {
-                    stopScreenRecorder();
-                }
-                mRecorderRunning = !mRecorderRunning;
-                break;
-            case R.id.settingsButton:
-                startSettings();
-                break;
+        if (view.getId() == R.id.power_toggle) {
+            if (!mRecorderRunning) {
+                startActivityForResult(mMediaProjectionManager.createScreenCaptureIntent(),
+                        REQUEST_MEDIA_PROJECTION);
+            } else {
+                stopScreenRecorder();
+            }
+            mRecorderRunning = !mRecorderRunning;
+        } else if (view.getId() == R.id.settingsButton) {
+            startSettings();
         }
     }
 
@@ -137,13 +136,10 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
         if (!focused) {
             clr = Color.argb(255, 0, 0, 0);
         }
-        switch (view.getId()) {
-            case R.id.power_toggle:
-                ((ImageView) view).setColorFilter(clr);
-                break;
-            case R.id.settingsButton:
-                ((ImageButton) view).setColorFilter(clr);
-                break;
+        if (view.getId() == R.id.power_toggle) {
+            ((ImageView) view).setColorFilter(clr);
+        } else if (view.getId() == R.id.settingsButton) {
+            ((ImageButton) view).setColorFilter(clr);
         }
     }
 
@@ -163,7 +159,9 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
         }
         if (requestCode == REQUEST_MEDIA_PROJECTION) {
             if (resultCode != Activity.RESULT_OK) {
-                Toast.makeText(this, R.string.toast_must_give_permission, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this,
+                        com.abrenoch.hyperiongrabber.common.R.string.toast_must_give_permission,
+                        Toast.LENGTH_SHORT).show();
                 if (mRecorderRunning) {
                     stopScreenRecorder();
                 }

@@ -2,11 +2,12 @@ package com.abrenoch.hyperiongrabber.tv.fragments.settings
 
 import android.content.Context
 import android.os.Bundle
-import android.support.v17.leanback.app.GuidedStepSupportFragment
-import android.support.v17.leanback.widget.GuidanceStylist
-import android.support.v17.leanback.widget.GuidedAction
+import androidx.leanback.app.GuidedStepSupportFragment
+import androidx.leanback.widget.GuidanceStylist
+import androidx.leanback.widget.GuidedAction
 import android.text.InputType
 import android.widget.Toast
+import com.abrenoch.hyperiongrabber.common.R as CommonR
 import com.abrenoch.hyperiongrabber.common.util.Preferences
 import com.abrenoch.hyperiongrabber.tv.R
 
@@ -18,7 +19,7 @@ internal abstract class SettingsStepBaseFragment : GuidedStepSupportFragment() {
     lateinit var prefs: Preferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        prefs = Preferences(context)
+        prefs = Preferences(requireContext())
         super.onCreate(savedInstanceState)
 
     }
@@ -35,7 +36,7 @@ internal abstract class SettingsStepBaseFragment : GuidedStepSupportFragment() {
     }
 
     protected fun continueAction(): GuidedAction {
-        return GuidedAction.Builder(context)
+        return GuidedAction.Builder(requireContext())
                 .id(CONTINUE)
                 .title(getString(R.string.guidedstep_save))
                 .description(R.string.guidedstep_letsdoit)
@@ -43,7 +44,7 @@ internal abstract class SettingsStepBaseFragment : GuidedStepSupportFragment() {
     }
 
     protected fun backAction(): GuidedAction {
-        return GuidedAction.Builder(context)
+        return GuidedAction.Builder(requireContext())
                 .id(BACK)
                 .title(getString(R.string.guidedstep_cancel))
                 .description(R.string.guidedstep_nevermind)
@@ -51,7 +52,7 @@ internal abstract class SettingsStepBaseFragment : GuidedStepSupportFragment() {
     }
 
     protected fun unSignedNumberAction(id: Long, title: String, description: CharSequence?): GuidedAction {
-        return GuidedAction.Builder(context)
+        return GuidedAction.Builder(requireContext())
                 .id(id)
                 .title(title)
                 .description(description)
@@ -64,7 +65,7 @@ internal abstract class SettingsStepBaseFragment : GuidedStepSupportFragment() {
 
     protected fun radioListAction(id: Long, title: String, description: String?, setId: Int, optionLabels: Array<String>, optionValues: Array<out Any>, selected: Any?): GuidedAction {
         val subActions = optionLabels.zip(optionValues).map {
-            ValueGuidedAction.Companion.Builder(context)
+            ValueGuidedAction.Companion.Builder(requireContext())
                     .parentId(id)
                     .checkSetId(setId)
                     .title(it.first)
@@ -74,7 +75,7 @@ internal abstract class SettingsStepBaseFragment : GuidedStepSupportFragment() {
         }
 
 
-        return GuidedAction.Builder(context)
+        return GuidedAction.Builder(requireContext())
                 .id(id)
                 .title(title)
                 .description(description)
@@ -108,7 +109,10 @@ internal abstract class SettingsStepBaseFragment : GuidedStepSupportFragment() {
             try {
                 Integer.parseInt(it)
             } catch (ignored: Exception){
-                showToast(getString(R.string.pref_error_invalid_field, it, getString(R.string.pref_title_reconnect_delay)))
+                showToast(getString(
+                        CommonR.string.pref_error_invalid_field,
+                        it,
+                        getString(CommonR.string.pref_title_reconnect_delay)))
                 throw AssertionError("$actionId is not a valid int")
             }
         }
@@ -119,7 +123,7 @@ internal abstract class SettingsStepBaseFragment : GuidedStepSupportFragment() {
 
 
     protected fun findSubActionById(subActionId: Long): GuidedAction? {
-        actions.forEach { mainAction ->
+        actions.orEmpty().forEach { mainAction ->
             mainAction.subActions?.find {
                 if (it.id == subActionId) {
                     return it
@@ -136,7 +140,7 @@ internal abstract class SettingsStepBaseFragment : GuidedStepSupportFragment() {
      */
     protected fun <T: Any> assertSubActionValue(actionId: Long, type: Class<T>): T {
         with(findActionByIdRecursive(actionId)!!){
-            val selected = subActions.find { it.isChecked }
+            val selected = subActions.orEmpty().find { it.isChecked }
 
             if (selected is ValueGuidedAction){
                 return selected.value as T
@@ -160,11 +164,13 @@ internal abstract class SettingsStepBaseFragment : GuidedStepSupportFragment() {
 
 
     protected fun showToast(message: CharSequence){
-        Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     private fun notifyRequired(actionId: Long){
-        showToast(getString(R.string.pref_error_missing_field, findActionById(actionId).title))
+        showToast(getString(
+                CommonR.string.pref_error_missing_field,
+                findActionById(actionId)!!.title))
     }
 
     companion object {

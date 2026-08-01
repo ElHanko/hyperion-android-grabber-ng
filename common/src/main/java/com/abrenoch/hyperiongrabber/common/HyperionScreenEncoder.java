@@ -10,7 +10,7 @@ import android.media.ImageReader.OnImageAvailableListener;
 import android.media.MediaCodec;
 import android.media.projection.MediaProjection;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+import androidx.annotation.RequiresApi;
 import android.util.Log;
 
 import com.abrenoch.hyperiongrabber.common.network.HyperionThread;
