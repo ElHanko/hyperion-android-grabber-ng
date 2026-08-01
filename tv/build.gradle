@@ -1,46 +1,32 @@
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
+plugins {
+    id 'com.android.application'
+}
 
 apply from: project(':common').projectDir.absolutePath + '/variables.gradle'
 
-
-buildscript {
-    repositories {
-        google()
-        jcenter()
-    }
-
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.1'
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.6'
-    }
-}
-
-repositories {
-    jcenter()
-    maven {
-        url 'https://maven.google.com'
-    }
-}
-
 android {
-    compileSdkVersion 26
+    namespace = 'com.abrenoch.hyperiongrabber.tv'
+    compileSdk = 36
+    buildToolsVersion = '36.0.0'
+
     defaultConfig {
-        applicationId "com.abrenoch.hyperiongrabber"
-        minSdkVersion 21
-        targetSdkVersion 26
-        versionCode 2012
-        versionName "1.0"
+        applicationId = 'com.abrenoch.hyperiongrabber'
+        minSdk = 21
+        targetSdk = 26
+        versionCode = 2012
+        versionName = '1.0'
     }
+
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled = false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
-        targetCompatibility JavaVersion.VERSION_1_8
-        sourceCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
@@ -54,9 +40,5 @@ dependencies {
     implementation "com.android.support:leanback-v17:$android_support_version"
     implementation "com.android.support:preference-leanback-v17:$android_support_version"
     implementation 'com.android.support.constraint:constraint-layout:1.1.0'
-
     implementation 'nl.dionsegijn:konfetti:1.1.2'
-    // required for konfetti
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-
 }
