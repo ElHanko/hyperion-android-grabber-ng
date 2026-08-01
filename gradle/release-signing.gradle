@@ -1,0 +1,73 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Mathias (ElHanko)
+
+import java.util.Properties
+
+def signingPropertiesFile = file('/signing/signing.properties')
+def signingConfigurationError = null
+
+if (!signingPropertiesFile.isFile()) {
+    signingConfigurationError =
+            "Release-Signierung für ${project.path} nicht verfügbar: " +
+                    "/signing/signing.properties fehlt."
+} else {
+    def signingProperties = new Properties()
+    signingPropertiesFile.withInputStream { stream ->
+        signingProperties.load(stream)
+    }
+
+    def requiredProperties = [
+            'storeFile',
+            'storePassword',
+            'keyAlias',
+            'keyPassword',
+            'storeType'
+    ]
+    def missingProperties = requiredProperties.findAll { propertyName ->
+        def value = signingProperties.getProperty(propertyName)
+        value == null || value.trim().isEmpty()
+    }
+
+    if (!missingProperties.isEmpty()) {
+        signingConfigurationError =
+                "Release-Signierung für ${project.path} unvollständig: " +
+                        "fehlende Properties: ${missingProperties.join(', ')}."
+    } else if (!signingProperties.getProperty('storeType').equalsIgnoreCase('PKCS12')) {
+        signingConfigurationError =
+                "Release-Signierung für ${project.path} ungültig: " +
+                        "storeType muss PKCS12 sein."
+    } else {
+        def releaseStoreFile = file(signingProperties.getProperty('storeFile'))
+
+        if (!releaseStoreFile.isFile()) {
+            signingConfigurationError =
+                    "Release-Signierung für ${project.path} nicht verfügbar: " +
+                            "Keystore ${releaseStoreFile} fehlt."
+        } else {
+            def localReleaseSigning = android.signingConfigs.create('localRelease') {
+                storeFile = releaseStoreFile
+                storePassword = signingProperties.getProperty('storePassword')
+                keyAlias = signingProperties.getProperty('keyAlias')
+                keyPassword = signingProperties.getProperty('keyPassword')
+                storeType = signingProperties.getProperty('storeType')
+            }
+
+            android.buildTypes.named('release').configure {
+                signingConfig = localReleaseSigning
+            }
+        }
+    }
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    def releaseTaskRequested = taskGraph.allTasks.any { task ->
+        task.project == project && task.name.toLowerCase(Locale.ROOT).contains('release')
+    }
+
+    if (releaseTaskRequested && signingConfigurationError != null) {
+        throw new GradleException(
+                "${signingConfigurationError} " +
+                        "Release-Build abgebrochen; es wird keine unsignierte APK erzeugt."
+        )
+    }
+}

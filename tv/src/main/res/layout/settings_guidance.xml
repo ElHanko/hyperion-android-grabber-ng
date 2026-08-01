@@ -20,7 +20,7 @@
     android:layout_height="match_parent"
     tools:viewBindingIgnore="true">
 
-    <com.abrenoch.hyperiongrabber.tv.views.SettingsRelativeLayout
+    <com.elhanko.hyperiongrabber.ng.tv.views.SettingsRelativeLayout
         android:id="@+id/guidance_container"
         style="?attr/guidanceContainerStyle" >
 
@@ -42,6 +42,6 @@
             android:id="@+id/guidance_description"
             style="?attr/guidanceDescriptionStyle"/>
 
-    </com.abrenoch.hyperiongrabber.tv.views.SettingsRelativeLayout>
+    </com.elhanko.hyperiongrabber.ng.tv.views.SettingsRelativeLayout>
 
 </FrameLayout>

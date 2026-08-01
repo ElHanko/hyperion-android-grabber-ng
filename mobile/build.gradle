@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = 'com.abrenoch.hyperiongrabber.mobile'
+    namespace = 'com.elhanko.hyperiongrabber.ng.mobile'
     compileSdk = 36
     buildToolsVersion = '36.0.0'
     enableKotlin = false
@@ -27,7 +27,13 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    lint {
+        disable += 'ExpiredTargetSdkVersion'
+    }
 }
+
+apply from: rootProject.file('gradle/release-signing.gradle')
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
