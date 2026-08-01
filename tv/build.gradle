@@ -8,11 +8,11 @@ android {
     buildToolsVersion = '36.0.0'
 
     defaultConfig {
-        applicationId = 'com.abrenoch.hyperiongrabber'
+        applicationId = 'com.elhanko.hyperiongrabber.ng'
         minSdk = 21
         targetSdk = 26
-        versionCode = 2012
-        versionName = '1.0'
+        versionCode = 2100
+        versionName = '2.1.0'
     }
 
     buildTypes {
