@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = 'com.abrenoch.hyperiongrabber.tv'
+    namespace = 'com.elhanko.hyperiongrabber.ng.tv'
     compileSdk = 36
     buildToolsVersion = '36.0.0'
 

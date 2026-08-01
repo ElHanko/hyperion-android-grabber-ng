@@ -39,12 +39,12 @@ dist/tv/
 
 ## Gradle-Cache
 
-Standardmäßig wird das benannte Volume `hyperion-android-gradle-cache` verwendet. Dadurch bleiben Gradle Wrapper, Abhängigkeiten und Build-Cache zwischen Builds erhalten.
+Standardmäßig wird das benannte Volume `hyperion-android-grabber-ng-gradle-cache` verwendet. Dadurch bleiben Gradle Wrapper, Abhängigkeiten und Build-Cache zwischen Builds erhalten.
 
 Cache löschen:
 
 ```bash
-docker volume rm hyperion-android-gradle-cache
+docker volume rm hyperion-android-grabber-ng-gradle-cache
 ```
 
 Andere Namen können über Umgebungsvariablen gesetzt werden:

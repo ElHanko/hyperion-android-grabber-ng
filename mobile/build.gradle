@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = 'com.abrenoch.hyperiongrabber.mobile'
+    namespace = 'com.elhanko.hyperiongrabber.ng.mobile'
     compileSdk = 36
     buildToolsVersion = '36.0.0'
     enableKotlin = false

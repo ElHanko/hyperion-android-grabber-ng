@@ -2,8 +2,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-IMAGE_NAME="${IMAGE_NAME:-hyperion-android-grabber-builder}"
-CACHE_VOLUME="${CACHE_VOLUME:-hyperion-android-gradle-cache}"
+IMAGE_NAME="${IMAGE_NAME:-hyperion-android-grabber-ng-builder}"
+CACHE_VOLUME="${CACHE_VOLUME:-hyperion-android-grabber-ng-gradle-cache}"
 BUILD_VARIANT="${1:-debug}"
 
 usage() {

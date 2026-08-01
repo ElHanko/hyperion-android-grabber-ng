@@ -20,6 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = 'hyperion-android-grabber-ng'
+rootProject.name = 'Hyperion Grabber NG'
 
 include ':mobile', ':tv', ':common'
