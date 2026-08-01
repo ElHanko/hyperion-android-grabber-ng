@@ -11,3 +11,6 @@
 .externalNativeBuild
 # Docker build output
 /dist/
+
+# Local Android signing credentials
+/signing/
