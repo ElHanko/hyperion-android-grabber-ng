@@ -1,3 +1,73 @@
+# Changelog
+
+## [2.1.1] — versionCode 2101 — Unreleased
+
+Erstes Kompatibilitätsupdate der zweiten Modernisierungsphase:
+
+### Changed
+
+- Das ProtoBuffer-Schema wurde exakt mit Hyperion NG 2.2.1 synchronisiert; die
+  veralteten `GRABBING`-Elemente wurden entfernt und `VIDEO` sowie `video`
+  erhielten die offiziellen Werte und Feldnummern.
+- Der TCP-Transport verwendet jetzt vollständiges Big-Endian-Framing,
+  wiederverwendete gepufferte Streams und serialisierte Request/Reply-Zugriffe.
+- Connect- und Read-Timeouts sind konfigurierbar, TCP-NoDelay ist aktiviert und
+  der Verbindungszustand wird vollständig geprüft.
+- Prioritäten, Bildabmessungen, RGB-/RGBA-Datenlängen sowie maximale Request-
+  und Reply-Größen werden vor der Verarbeitung validiert.
+
+### Fixed
+
+- Fragmentierte TCP-Header und Reply-Bodys werden vollständig eingelesen;
+  `InputStream.available()` wird nicht mehr zur Paketabgrenzung verwendet.
+- Hyperion-Fehlerantworten, fehlende Erfolgsfelder, ungültige Paketlängen,
+  Parsefehler, EOF und Read-Timeouts werden mit nachvollziehbaren Fehlertypen
+  behandelt.
+- Nach einem nicht mehr zuverlässigen Transportzustand wird die Verbindung
+  deterministisch geschlossen, sodass die vorhandene Reconnect-Logik eine neue
+  Verbindung aufbauen kann.
+- `finalize()` wurde durch idempotentes, explizites Schließen ersetzt.
+
+### Verified
+
+- 23 JVM-Transporttests mit lokalem `ServerSocket` prüfen Requests, Framing,
+  RGB/RGBA, fragmentierte Antworten, Fehlerfälle, mehrere Requests auf einer
+  Verbindung und einen neuen Verbindungsaufbau nach einem Abbruch.
+- Debug- und signierte Release-APKs für Mobile und TV wurden reproduzierbar im
+  Docker-Builder erstellt.
+- Schema- und Transportkompatibilität wurden gegen die offiziellen
+  Hyperion-NG-2.2.1-Quellen und automatisierte Fake-Server-Tests bestätigt.
+- Versionen: Mobile `1101/2.1.1`, TV `2101/2.1.1`.
+
+Der reale Update-, Fire-TV- und Hyperion-Server-Test für 2.1.1 steht noch aus.
+Bis zu dessen Abschluss bleibt diese Version `Unreleased`.
+
+## [2.1.0] — versionCode 2100 — 2026-08-02
+
+Abschluss der ersten Modernisierungsphase:
+
+### Changed
+
+- Neue Projektidentität **Hyperion Grabber NG**.
+- Application-ID auf `com.elhanko.hyperiongrabber.ng` umgestellt.
+- Vollständige Paketmigration auf die ElHanko-Namespaces.
+- Reproduzierbares Docker-Buildsystem für Debug- und Release-Builds eingeführt.
+- Build-Toolchain auf Gradle 9.5.0, Android Gradle Plugin 9.3.0 und JDK 17
+  aktualisiert.
+- Kompilierung auf `compileSdk 36` aktualisiert.
+- Support Libraries vollständig zu AndroidX migriert.
+- Butter Knife durch Android View Binding beziehungsweise direkte Android-APIs
+  ersetzt.
+- Lokale, wiederverwendbare PKCS#12-Release-Signierung eingerichtet.
+- Versionen: Mobile `1100/2.1.0`, TV `2100/2.1.0`.
+
+### Verified
+
+- Reproduzierbare Debug- und signierte Release-Builds für Mobile und TV.
+- Erfolgreicher Phase-1-Basistest auf Fire OS 8.
+
+## Legacy releases
+
 ## [v1.0]
 ### Changes
 - Arabic translation
