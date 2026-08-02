@@ -154,18 +154,24 @@ validation, and real Fire TV validation are documented in the
 
 **Status:** In progress
 
-Stages 1 and 2 are complete. The two official Hyperion NG 2.2.1 schemas, pinned
+Stages 1 through 3 are complete. The two official Hyperion NG 2.2.1 schemas, pinned
 FlatBuffers 25.9.23 toolchain and runtime, reproducible Java generation, and
 schema-level offline tests are integrated into the build. An isolated socket
 client now implements the official TCP framing, registration, Color, RGB24 and
 RGB32 RawImage, own-priority Clear, bounded reply parsing, and deterministic
 error handling. Its 58 loopback fake-server JVM tests pass.
 
-The isolated client has no production caller. FlatBuffer is not selectable or
-usable in the application, and no transport boundary, preference, UI, discovery,
+A minimal common interface, immutable configuration, stable `protobuf` and
+`flatbuffer` type values, thin adapters around both existing clients, and a
+stateless single-selection factory are also implemented. Forty-three offline
+adapter and factory tests verify exact delegation, the Protocol Buffers default,
+preserved failures, independent transports, and no fallback.
+
+The boundary and isolated client have no production caller. FlatBuffer is not
+selectable or usable in the application, and no preference, UI, discovery,
 production reconnect, real-server test, or hardware validation has been
 implemented. Protocol Buffers remains the sole production transport and stable
-default. Stage 3 and every later FlatBuffer stage remain planned.
+default. Stage 4 and every later FlatBuffer stage remain planned.
 
 Protocol Buffers will remain the stable default transport, including for existing
 installations. FlatBuffer will be evaluated as an experimental opt-in transport:
@@ -181,7 +187,7 @@ installations. FlatBuffer will be evaluated as an experimental opt-in transport:
 - intentionally stopping the grabber will stop reconnect attempts for either
   transport.
 
-The planned architecture is intentionally described only at a high level:
+The implemented internal boundary is intentionally small:
 
 ```text
 Hyperion transport abstraction
@@ -189,9 +195,9 @@ Hyperion transport abstraction
 - experimental FlatBuffer implementation
 ```
 
-The completed Stage 1 and Stage 2 validation covers generated code from the
-official Hyperion NG FlatBuffer schema and the isolated framed socket client.
-Later planned validation includes:
+The completed Stage 1 through Stage 3 validation covers generated code from the
+official Hyperion NG FlatBuffer schema, the isolated framed socket client, and
+both test-only transport adapters. Later planned validation includes:
 
 - an optional real-server integration test;
 - real Fire TV validation;
@@ -200,8 +206,8 @@ Later planned validation includes:
 - verification that Protocol Buffers remains the unchanged default.
 
 FlatBuffer is a possible modern technical transport path, not an expansion of
-the application's purpose. Completing Stages 1 and 2 does not make it stable or
-available in the application.
+the application's purpose. Completing Stages 1 through 3 does not make it stable
+or available in the application.
 
 ## Phase 4 – Android platform and lifecycle modernization
 

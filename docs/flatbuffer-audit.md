@@ -26,10 +26,10 @@ No dependency, schema, generated source, runtime client, abstraction, preference
 UI, discovery, test, manifest, or version change is part of this audit.
 
 The architecture analysis in this document remains the original audit record.
-The later, deliberately limited Stage 1 and Stage 2 implementations are recorded
-under their implementation-status headings in section 6. Neither stage makes
-FlatBuffer selectable in the application or authorizes a later integration
-stage.
+The later, deliberately limited Stage 1 through Stage 3 implementations are
+recorded under their implementation-status headings in section 6. None of these
+stages makes FlatBuffer selectable in the application or authorizes a later
+integration stage.
 
 ### Documentation consistency at the audit point
 
@@ -619,7 +619,91 @@ UI, discovery, production reconnect, real FlatBuffer server test, or hardware
 validation is part of Stage 2. Protocol Buffers remains the sole production
 transport and stable default.
 
-## 7. Proposed minimal transport abstraction
+### Stage 3 implementation status
+
+**Status:** Completed on August 2, 2026
+
+Stage 3 adds the Android-independent package
+`com.elhanko.hyperiongrabber.ng.common.network.transport`. Its
+[`HyperionTransport`](../common/src/main/java/com/elhanko/hyperiongrabber/ng/common/network/transport/HyperionTransport.java)
+interface extends `Closeable` and exposes only `isConnected`, `setColor`,
+`setImage`, own-priority `clear`, `transportName`, and `close`. Host, port,
+priority, origin, and timeouts do not appear on individual operations, and no
+wire-format type or generic raw-request method crosses the interface.
+
+The immutable
+[`HyperionTransportConfig`](../common/src/main/java/com/elhanko/hyperiongrabber/ng/common/network/transport/HyperionTransportConfig.java)
+contains host, selected port, priority, origin, connect timeout, and read timeout.
+It validates a non-empty host, port `1..65535`, priority `100..199`, and positive
+timeouts. Origin remains optional for Protocol Buffers because that protocol does
+not transmit it; selecting FlatBuffer requires a non-empty origin before any
+socket is opened. The configuration contains no transport selection, preference,
+Android object, default address, or device identity.
+
+[`HyperionTransportType`](../common/src/main/java/com/elhanko/hyperiongrabber/ng/common/network/transport/HyperionTransportType.java)
+is an enum with exact persistent identifiers `protobuf` and `flatbuffer`.
+Parsing is deliberately case-sensitive. `null`, empty, differently cased, and
+unknown values resolve to the stable `PROTOBUF` default. No port, discovery
+result, or reachability check influences this conversion. Stage 3 defines these
+values but does not save or read an Android preference.
+
+The two final adapters are deliberately thin:
+
+- [`ProtobufHyperionTransport`](../common/src/main/java/com/elhanko/hyperiongrabber/ng/common/network/transport/ProtobufHyperionTransport.java)
+  constructs the unchanged `Hyperion` client, stores the configured priority,
+  and supplies it to every Color, Image, and Clear call. It forwards color,
+  duration, dimensions, and RGB24/RGB32 bytes unchanged. Its stable name is
+  `Protocol Buffers`; the adapter does not expose the underlying `clearAll` or
+  raw Protobuf API.
+- [`FlatBufferHyperionTransport`](../common/src/main/java/com/elhanko/hyperiongrabber/ng/common/network/transport/FlatBufferHyperionTransport.java)
+  constructs and directly delegates to the Stage 2 client. It neither repeats
+  framing and registration nor changes image validation. Its stable name is
+  `FlatBuffer (experimental)`. After own-priority Clear, `isConnected()` remains
+  false until the next operation completes the Stage 2 lazy re-registration.
+
+The stateless
+[`HyperionTransportFactory`](../common/src/main/java/com/elhanko/hyperiongrabber/ng/common/network/transport/HyperionTransportFactory.java)
+creates exactly one adapter for the explicitly supplied type and configuration.
+A `null` type uses the same Protocol Buffers default. The factory owns no active
+transport, opens no probe connection, performs no discovery, starts no thread,
+and has no fallback branch. Construction failures from the selected transport
+are returned to the caller; a FlatBuffer registration error or timeout never
+attempts Protocol Buffers.
+
+The common operations do not conceal the protocols' internal semantics:
+
+- Protocol Buffers has no registration handshake, includes priority in each
+  request, and requires the explicit reply `success` field. The existing client
+  and all its additional public methods remain unchanged.
+- FlatBuffer registers origin and priority during construction. Normal Color and
+  Image requests do not repeat the priority, success is the absence of `error`,
+  and `registered = -1` can remove readiness. Own-priority Clear therefore
+  requires lazy re-registration before the next operation.
+
+The adapters do not wrap existing transport failures. `HyperionServerException`,
+`HyperionTimeoutException`, `HyperionProtocolException`, ordinary `IOException`,
+and local `IllegalArgumentException` behaviors remain observable. This also means
+that no error can trigger an implicit transport change.
+
+Forty-three new offline JVM tests cover the type and exact identifiers, safe
+default, immutable configuration, adapter delegation for Color/RGB24/RGB32/Clear,
+transport names, readiness and Clear re-registration, preserved exception types,
+idempotent close, exact factory selection, single-connection failures,
+no-fallback behavior, statelessness, and independent factory results. All use
+dynamic loopback `ServerSocket` endpoints and contact no external server. The
+complete forced test run passed with 152 Common tests (the one existing opt-in
+Protocol Buffers integration test skipped), one Mobile test, and no TV JVM test
+sources. Mobile and TV Debug and signed Release APKs built successfully with
+unchanged application ID, versions, and signing identity.
+
+Only tests call the Stage 3 boundary. `HyperionThread`, screen service, encoders,
+Activities, Fragments, Receivers, preferences, discovery, and reconnect logic
+still use no Stage 3 type or factory. Protocol Buffers remains the sole production
+transport. Product integration, stored selection, a separate FlatBuffer port,
+settings UI, reconnect selection, real-server testing, and hardware validation
+remain later stages.
+
+## 7. Minimal transport abstraction
 
 ### Recommendation: compose the existing client through an adapter
 
@@ -643,13 +727,12 @@ initial implementation.
 
 ### Contract and factory boundary
 
-Do not commit final class names in the audit. The conceptual contract is:
+The implemented Stage 3 contract is:
 
 ```text
-connect()
 isConnected()
-sendColor(rgb, durationMs)
-sendImage(bytes, width, height, durationMs)
+setColor(rgb, durationMs)
+setImage(bytes, width, height, durationMs)
 clear()
 close()
 transportName()
@@ -661,10 +744,10 @@ factory. The factory creates exactly one selected implementation. Priority does
 not appear on each call because it is configuration for both transports, even
 though the Protocol Buffers adapter delegates it into every existing request.
 
-`connect()` completes only when the transport is ready: socket-connected for the
-adapter and socket-connected plus registered for FlatBuffer. Alternatively, the
-factory may return an already-connected object to preserve `Hyperion` constructor
-semantics; callers must still observe the same ready-or-throw boundary.
+The factory returns an already-connected object, preserving both existing client
+constructors. Successful creation means socket-connected for Protocol Buffers
+and socket-connected plus registered for FlatBuffer. Callers therefore observe
+one ready-or-throw construction boundary without a duplicate `connect()` state.
 
 The interface extends `Closeable` or equivalent. `close()` is idempotent and does
 not implicitly clear another priority. The lifecycle explicitly attempts
@@ -797,7 +880,9 @@ session.
 
 ## 10. Testing strategy
 
-### Transport-neutral tests
+### Transport-neutral service tests
+
+**Status:** Planned for Stage 4.
 
 Use a fake factory and fake transports to prove:
 
@@ -907,13 +992,13 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
 
 ### Stage 3 - Minimal transport boundary
 
-**Status:** Planned
+**Status:** Completed
 
-- Add the small contract, immutable connection configuration, factory, and thin
-  adapter around the unchanged `Hyperion` class.
-- Route unit-test-only callers through the boundary first.
-- Prove Protocol Buffers remains the default and its 23 existing tests are
-  unchanged and passing.
+- Added the small contract, immutable connection configuration, stable transport
+  type, stateless factory, and thin adapters around both unchanged clients.
+- Kept all callers test-only; the production path does not use the boundary.
+- Added 43 adapter, type, configuration, factory, and no-fallback tests and kept
+  all existing Protocol Buffers, discovery, schema, and Stage 2 tests passing.
 
 ### Stage 4 - Service lifecycle and preference guarantees
 
