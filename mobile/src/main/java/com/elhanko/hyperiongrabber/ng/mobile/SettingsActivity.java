@@ -100,10 +100,16 @@ public class SettingsActivity extends AppCompatActivity {
                     com.elhanko.hyperiongrabber.ng.common.R.xml.pref_general, rootKey);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference(getString(
-                    com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_host)));
-            bindPreferenceSummaryToValue(findPreference(getString(
-                    com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_port)));
+            Preference discoveryPreference = findPreference(getString(
+                    com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_discover_server));
+            if (discoveryPreference != null) {
+                discoveryPreference.setOnPreferenceClickListener(preference -> {
+                    startActivity(new Intent(requireContext(), ServerDiscoveryActivity.class));
+                    return true;
+                });
+            }
+
+            bindConnectionSummaries();
             bindPreferenceSummaryToValue(findPreference(getString(
                     com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_priority)));
             bindPreferenceSummaryToValue(findPreference(getString(
@@ -114,6 +120,25 @@ public class SettingsActivity extends AppCompatActivity {
                     com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_x_led)));
             bindPreferenceSummaryToValue(findPreference(getString(
                     com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_y_led)));
+        }
+
+        @Override
+        public void onResume() {
+            super.onResume();
+            bindConnectionSummaries();
+        }
+
+        private void bindConnectionSummaries() {
+            Preference host = findPreference(getString(
+                    com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_host));
+            Preference port = findPreference(getString(
+                    com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_port));
+            if (host != null) {
+                bindPreferenceSummaryToValue(host);
+            }
+            if (port != null) {
+                bindPreferenceSummaryToValue(port);
+            }
         }
 
         @Override

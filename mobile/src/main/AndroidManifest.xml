@@ -19,6 +19,11 @@
             android:label="@string/settings"
             android:parentActivityName=".MainActivity" />
 
+        <activity
+            android:name=".ServerDiscoveryActivity"
+            android:label="@string/discovery_title"
+            android:parentActivityName=".SettingsActivity" />
+
         <activity android:name="com.elhanko.hyperiongrabber.ng.common.BootActivity"
             android:finishOnTaskLaunch ="true"
             android:noHistory="true"

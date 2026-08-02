@@ -22,6 +22,23 @@
   <string name="scanner_no_results">No results found %s</string>
   <string name="scanner_retry_button">retry</string>
   <string name="scanner_manual_setup_button">Manual setup</string>
+  <!-- Hyperion ProtoServer discovery -->
+  <string name="discovery_title">Find Hyperion servers</string>
+  <string name="discovery_description">Search the local network for Hyperion Protocol Buffers servers. You can always configure the connection manually.</string>
+  <string name="discovery_start">Start search</string>
+  <string name="discovery_cancel">Cancel search</string>
+  <string name="discovery_searching">Searching for Hyperion ProtoServers…</string>
+  <string name="discovery_ready">Start a search or use manual setup.</string>
+  <string name="discovery_no_results">No Hyperion ProtoServers were found. Check the network or use manual setup.</string>
+  <string name="discovery_failed">Server discovery failed. Retry the search or use manual setup.</string>
+  <string name="discovery_select_hint">Select a server to use its discovered address and port.</string>
+  <string name="discovery_manual_setup">Manual setup</string>
+  <string name="discovery_back_to_settings">Back to manual settings</string>
+  <string name="discovery_saved">Hyperion server saved</string>
+  <string name="discovery_server_details">Protocol Buffers — %1$s:%2$d</string>
+  <string name="discovery_server_details_with_version">Protocol Buffers — %1$s:%2$d — Hyperion %3$s</string>
+  <string name="pref_title_discover_server">Find Hyperion servers</string>
+  <string name="pref_summary_discover_server">Search automatically for a Hyperion ProtoServer</string>
   <!-- Network Scanner result -->
   <string name="scan_result_title">And the winner is…</string>
   <string name="scan_result_description">To celebrate, we have turned all your LEDs purple %s</string>
