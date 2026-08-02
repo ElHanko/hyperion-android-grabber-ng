@@ -26,9 +26,10 @@ No dependency, schema, generated source, runtime client, abstraction, preference
 UI, discovery, test, manifest, or version change is part of this audit.
 
 The architecture analysis in this document remains the original audit record.
-The later, deliberately limited Stage 1 implementation is recorded under
-**Stage 1 implementation status** in section 6; it does not change the runtime
-transport conclusions or authorize any later stage.
+The later, deliberately limited Stage 1 and Stage 2 implementations are recorded
+under their implementation-status headings in section 6. Neither stage makes
+FlatBuffer selectable in the application or authorizes a later integration
+stage.
 
 ### Documentation consistency at the audit point
 
@@ -521,6 +522,103 @@ and no reflection schema or FlexBuffers API was added to project code. Debug and
 Release dependency insight each resolve exactly one FlatBuffers runtime version:
 `25.9.23`.
 
+### Stage 2 implementation status
+
+**Status:** Completed on August 2, 2026
+
+Stage 2 adds the isolated
+[`FlatBufferHyperionClient`](../common/src/main/java/com/elhanko/hyperiongrabber/ng/common/network/flatbuffer/FlatBufferHyperionClient.java)
+in package
+`com.elhanko.hyperiongrabber.ng.common.network.flatbuffer`. It is a final,
+`Closeable`, Android-independent client with no background reader and no
+reconnect policy. It owns exactly one TCP socket, one buffered input stream and
+one buffered output stream, enables `TCP_NODELAY`, and accepts immutable host,
+port, priority, origin, connect-timeout, and read-timeout values. Host and origin
+must be non-empty, port must be in `1..65535`, priority in `100..199`, and both
+timeouts must be positive.
+
+Construction connects and immediately performs the official registration
+handshake. The client sends `Register(origin, priority)` and becomes ready only
+after a no-error reply whose `registered` value equals the requested priority.
+`isConnected()` therefore means both socket-open and registered. A server error,
+EOF, timeout, malformed reply, or failure to obtain the matching acknowledgement
+closes the construction attempt. A mismatched acknowledgement causes one fresh
+Register request; at most two consecutive registration attempts are made.
+
+Both directions use exactly a four-byte unsigned big-endian payload length
+followed by a normal, non-size-prefixed FlatBuffer root. Reads consume exactly
+the complete header and body, so fragmented frames and multiple buffered frames
+remain separate. The client never uses `InputStream.available()` or generated
+size-prefixed accessors. Its local Android protection limits are 64 MiB for an
+outgoing request payload and 1 MiB for a reply payload, excluding the four-byte
+header. These are client-local allocation limits, not claimed Hyperion protocol
+limits; zero, unsigned-oversized, and otherwise out-of-range lengths are rejected
+before body allocation.
+
+The deliberately small public request API is `setColor`, `setImage`, `clear`,
+`isConnected`, and `close`:
+
+- color data is transferred unchanged as the schema's packed `0xRRGGBB` integer,
+  and duration is transferred unchanged in milliseconds;
+- raw images are sent through `Image` / `RawImage` without conversion. RGB24
+  requires exactly `width * height * 3` bytes and RGB32/RGBA exactly
+  `width * height * 4`; dimensions, multiplication, byte count, and final request
+  size are validated before network output. The fourth RGB32 byte is preserved,
+  while Hyperion NG 2.2.1 consumes the first three bytes as R, G, and B;
+- clear always sends only the configured own priority. There is no clear-all or
+  generic raw-request API.
+
+Reply handling evaluates the schema's `error`, `registered`, and `video` fields.
+Because FlatBuffers Java 25.9.23 has no complete verifier API, the implementation
+performs narrow root, table, scalar, and string bounds checks before calling the
+normal generated root accessor. Runtime parsing failures and assertions caused
+by invalid server data are converted to `HyperionProtocolException`; no complete
+custom FlatBuffer verifier was introduced. A present server error field is
+surfaced as the existing `HyperionServerException` (with a generic rejection
+message if its string is empty). Read timeouts use the existing
+`HyperionTimeoutException`; framing, parsing, and invalid-state failures use the
+existing `HyperionProtocolException`.
+
+The implemented registration state follows the observed 2.2.1 server behavior:
+
+- a successful own-priority Clear reply has `registered = -1`; Clear still
+  succeeds, but the socket becomes not ready and the next Color, Image, or Clear
+  call performs a fresh Register handshake before sending its request;
+- an unsolicited `registered = -1` before a normal command reply is consumed as
+  a state event rather than mistaken for that reply. The already-sent command is
+  considered complete only after its following valid reply, and the next public
+  operation re-registers lazily;
+- `video != -1` with `registered = -1` is consumed as a bounded state reply, with
+  no additional video-mode behavior invented for the Android client;
+- state replies and consecutive Register attempts are bounded, so repeated
+  `registered = -1` values cannot create an infinite loop.
+
+The upstream server continues its parse loop after sending a valid error reply,
+so a server error for a normal operation leaves the synchronized connection
+open and reusable. A registration error is different: it prevents readiness and
+closes the client. Timeouts, EOF, socket errors, invalid frame lengths, malformed
+FlatBuffers, and invalid reply state are fatal and close the connection.
+Locally rejected parameters and image data do not touch the socket. `close()` is
+idempotent and can close the socket while another thread is blocked in a read;
+one exchange lock serializes every complete write/reply sequence.
+
+The Stage 2 fake-server suite contains 58 deterministic offline JVM tests across
+three client test classes. Loopback `ServerSocket` instances use operating-system
+assigned ports and propagate server-thread failures. The suite covers connection
+and registration, exact framing and fragmentation, Color, RGB24/RGB32 RawImage,
+Clear and re-registration, all local bounds, malformed input, timeout/EOF/socket
+failure, valid server-error reuse, concurrent serialization, reply separation,
+and idempotent/concurrent close. The complete regular matrix passed with 109
+Common tests (one existing opt-in Protocol Buffers integration test skipped), one
+Mobile test, and no TV JVM test sources. Mobile and TV Debug and signed Release
+APKs also built successfully with unchanged IDs, versions, and signing identity.
+
+This client has no production caller. No transport boundary, adapter,
+`HyperionThread` or service integration, preference, FlatBuffer port setting,
+UI, discovery, production reconnect, real FlatBuffer server test, or hardware
+validation is part of Stage 2. Protocol Buffers remains the sole production
+transport and stable default.
+
 ## 7. Proposed minimal transport abstraction
 
 ### Recommendation: compose the existing client through an adapter
@@ -715,7 +813,10 @@ Use a fake factory and fake transports to prove:
 
 ### FlatBuffer fake-server JVM tests
 
-Use loopback `ServerSocket` tests, offline and deterministic, for:
+**Stage 2 status:** Completed with 58 passing tests.
+
+The implemented loopback `ServerSocket` tests are offline and deterministic and
+cover:
 
 - TCP connection and the first `Register(origin, priority)` frame;
 - readiness only after `registered == priority`;
@@ -797,12 +898,16 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
 
 ### Stage 2 - Isolated FlatBuffer socket client
 
-- Implement framing, verified parsing, registration state, bounded allocation,
+**Status:** Completed
+
+- Implemented framing, guarded parsing, registration state, bounded allocation,
   serialized exchanges, timeouts, errors, own-priority clear, and idempotent close.
-- Add the complete offline fake-server suite.
-- Keep the client unreachable from production UI/service code.
+- Added the complete 58-test offline fake-server suite.
+- Kept the client unreachable from production UI and service code.
 
 ### Stage 3 - Minimal transport boundary
+
+**Status:** Planned
 
 - Add the small contract, immutable connection configuration, factory, and thin
   adapter around the unchanged `Hyperion` class.
@@ -812,6 +917,8 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
 
 ### Stage 4 - Service lifecycle and preference guarantees
 
+**Status:** Planned
+
 - Route `HyperionThread` image/clear/close through exactly one selected transport.
 - Add the stored transport value and separate FlatBuffer port with missing-value
   Protocol Buffers semantics.
@@ -819,6 +926,8 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
 - Add transport-neutral factory, reconnect, switching, stop, and no-fallback tests.
 
 ### Stage 5 - Experimental settings UI
+
+**Status:** Planned
 
 - Add the unchecked checkbox, warning, conditional FlatBuffer port, and selected
   transport status/errors to TV and Mobile settings.
@@ -828,11 +937,15 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
 
 ### Stage 6 - Optional real FlatBuffer integration
 
+**Status:** Planned
+
 - Add the environment-gated Hyperion NG 2.2.1 FlatBuffer test.
 - Record registration, color, RGB image, replies, own-priority cleanup, and close
   separately from the offline suite.
 
 ### Stage 7 - Real Fire TV validation
+
+**Status:** Planned
 
 - Perform the update/default, opt-in, capture, LED, interruption/reconnect,
   intentional-stop, persistence, explicit return-to-Protobuf, no-fallback, and
@@ -840,6 +953,8 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
 - Record only observed TV results; do not infer Mobile validation.
 
 ### Stage 8 - Phase 3 release completion
+
+**Status:** Planned
 
 - Update user documentation, changelog, roadmap, version metadata, and release
   artifacts only after all prior gates pass.
