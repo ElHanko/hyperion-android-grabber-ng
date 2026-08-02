@@ -7,9 +7,13 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.CheckBoxPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
+
+import com.elhanko.hyperiongrabber.ng.common.network.transport.HyperionTransportPreferenceBinding;
+import com.elhanko.hyperiongrabber.ng.common.util.Preferences;
 
 import java.lang.reflect.Field;
 
@@ -110,6 +114,7 @@ public class SettingsActivity extends AppCompatActivity {
             }
 
             bindConnectionSummaries();
+            bindFlatBufferTransportPreferences();
             bindPreferenceSummaryToValue(findPreference(getString(
                     com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_priority)));
             bindPreferenceSummaryToValue(findPreference(getString(
@@ -126,6 +131,7 @@ public class SettingsActivity extends AppCompatActivity {
         public void onResume() {
             super.onResume();
             bindConnectionSummaries();
+            updateFlatBufferTransportPreferences();
         }
 
         private void bindConnectionSummaries() {
@@ -138,6 +144,79 @@ public class SettingsActivity extends AppCompatActivity {
             }
             if (port != null) {
                 bindPreferenceSummaryToValue(port);
+            }
+        }
+
+        /**
+         * Binds a non-persistent checkbox to the stable string transport preference.
+         *
+         * <p>A running grabber retains its service-reported transport. This control only selects
+         * the transport for its next start.</p>
+         */
+        private void bindFlatBufferTransportPreferences() {
+            CheckBoxPreference transportControl = findPreference(getString(
+                    com.elhanko.hyperiongrabber.ng.common.R.string
+                            .pref_key_flatbuffer_transport_control));
+            Preference flatBufferPort = findPreference(getString(
+                    com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_flatbuffer_port));
+            if (transportControl != null) {
+                transportControl.setPersistent(false);
+                transportControl.setOnPreferenceChangeListener((preference, value) -> {
+                    boolean enabled = Boolean.TRUE.equals(value);
+                    new Preferences(requireContext()).putString(
+                            com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_transport,
+                            HyperionTransportPreferenceBinding.persistedValue(enabled));
+                    transportControl.setChecked(enabled);
+                    updateFlatBufferTransportPreferences();
+                    return false;
+                });
+            }
+            if (flatBufferPort != null) {
+                flatBufferPort.setOnPreferenceChangeListener((preference, value) -> {
+                    String port = value == null ? null : value.toString();
+                    if (!HyperionTransportPreferenceBinding.isValidPort(port)) {
+                        Toast.makeText(requireContext(),
+                                com.elhanko.hyperiongrabber.ng.common.R.string
+                                        .pref_error_invalid_flatbuffer_port,
+                                Toast.LENGTH_SHORT).show();
+                        return false;
+                    }
+                    preference.setSummary(port);
+                    return true;
+                });
+            }
+            updateFlatBufferTransportPreferences();
+        }
+
+        /** Refreshes only the presentation; it never repairs or migrates stored preferences. */
+        private void updateFlatBufferTransportPreferences() {
+            CheckBoxPreference transportControl = findPreference(getString(
+                    com.elhanko.hyperiongrabber.ng.common.R.string
+                            .pref_key_flatbuffer_transport_control));
+            Preference flatBufferPort = findPreference(getString(
+                    com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_flatbuffer_port));
+            Preferences preferences = new Preferences(requireContext());
+            boolean enabled = HyperionTransportPreferenceBinding.isFlatBufferEnabled(
+                    preferences.getString(
+                            com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_transport,
+                            null));
+
+            if (transportControl != null) {
+                transportControl.setChecked(enabled);
+                transportControl.setSummary(enabled
+                        ? com.elhanko.hyperiongrabber.ng.common.R.string
+                                .pref_summary_flatbuffer_transport_enabled
+                        : com.elhanko.hyperiongrabber.ng.common.R.string
+                                .pref_summary_flatbuffer_transport_disabled);
+            }
+            if (flatBufferPort != null) {
+                flatBufferPort.setVisible(enabled);
+                String port = HyperionTransportPreferenceBinding.flatBufferPortOrDefault(
+                        preferences.getString(
+                                com.elhanko.hyperiongrabber.ng.common.R.string
+                                        .pref_key_flatbuffer_port,
+                                null));
+                flatBufferPort.setSummary(port);
             }
         }
 

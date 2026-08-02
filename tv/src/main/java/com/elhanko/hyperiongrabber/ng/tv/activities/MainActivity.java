@@ -20,10 +20,13 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.elhanko.hyperiongrabber.ng.common.BootActivity;
 import com.elhanko.hyperiongrabber.ng.common.HyperionScreenService;
+import com.elhanko.hyperiongrabber.ng.common.network.transport.HyperionTransportPreferenceBinding;
+import com.elhanko.hyperiongrabber.ng.common.network.transport.HyperionTransportStatus;
 import com.elhanko.hyperiongrabber.ng.common.util.Preferences;
 import com.elhanko.hyperiongrabber.ng.tv.R;
 
@@ -31,21 +34,25 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
         ImageView.OnFocusChangeListener {
     public static final int REQUEST_MEDIA_PROJECTION = 1;
     public static final int REQUEST_INITIAL_SETUP = 2;
-    public static final String BROADCAST_ERROR = "SERVICE_ERROR";
-    public static final String BROADCAST_TAG = "SERVICE_STATUS";
-    public static final String BROADCAST_FILTER = "SERVICE_FILTER";
     private static final String TAG = "DEBUG";
     private boolean mRecorderRunning = false;
+    private String mActiveTransportName;
     private static MediaProjectionManager mMediaProjectionManager;
 
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            boolean checked = intent.getBooleanExtra(BROADCAST_TAG, false);
+            boolean checked = intent.getBooleanExtra(HyperionScreenService.BROADCAST_TAG, false);
             mRecorderRunning = checked;
-            String error = intent.getStringExtra(BROADCAST_ERROR);
+            String transportName = intent.getStringExtra(HyperionScreenService.BROADCAST_TRANSPORT);
+            if (HyperionTransportStatus.connectedUsing(transportName) != null) {
+                mActiveTransportName = transportName;
+            }
+            String error = intent.getStringExtra(HyperionScreenService.BROADCAST_ERROR);
             if (error != null) {
-                Toast.makeText(getBaseContext(), error, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getBaseContext(),
+                        HyperionTransportStatus.formatError(transportName, error),
+                        Toast.LENGTH_SHORT).show();
             }
             setImageViews(checked, true);
         }
@@ -68,10 +75,19 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
         Preferences preferences = new Preferences(getApplicationContext());
         String host = preferences.getString(
                 com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_host, null);
-        int port = preferences.getInt(
-                com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_port, -1);
+        boolean flatBufferEnabled = HyperionTransportPreferenceBinding.isFlatBufferEnabled(
+                preferences.getString(
+                        com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_transport,
+                        null));
+        String selectedPort = flatBufferEnabled
+                ? HyperionTransportPreferenceBinding.flatBufferPortOrDefault(preferences.getString(
+                        com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_flatbuffer_port,
+                        null))
+                : preferences.getString(
+                        com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_port,
+                        null);
 
-        if (host == null || port == -1){
+        if (host == null || !HyperionTransportPreferenceBinding.isValidPort(selectedPort)){
             return false;
         }
 
@@ -110,7 +126,7 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
         setImageViews(mRecorderRunning, false);
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
-                mMessageReceiver, new IntentFilter(BROADCAST_FILTER));
+                mMessageReceiver, new IntentFilter(HyperionScreenService.BROADCAST_FILTER));
 
         // request an update on the running status
         checkForInstance();
@@ -194,7 +210,13 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
 
     private void setImageViews(boolean running, boolean animated) {
         View rainbow = findViewById(R.id.sweepGradientView);
-        View message = findViewById(R.id.grabberStartedText);
+        TextView message = findViewById(R.id.grabberStartedText);
+        String transportStatus = HyperionTransportStatus.connectedUsing(mActiveTransportName);
+        message.setText(transportStatus == null
+                ? getString(com.elhanko.hyperiongrabber.ng.common.R.string.message_service_started)
+                : getString(com.elhanko.hyperiongrabber.ng.common.R.string
+                        .message_service_started_with_transport, transportStatus));
+        message.setContentDescription(message.getText());
         if (running) {
             if (animated){
                 fadeView(rainbow, true);

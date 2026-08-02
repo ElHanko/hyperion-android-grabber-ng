@@ -11,6 +11,7 @@ import androidx.leanback.widget.GuidedAction
 import android.widget.Toast
 import com.elhanko.hyperiongrabber.ng.common.R as CommonR
 import com.elhanko.hyperiongrabber.ng.common.network.Hyperion
+import com.elhanko.hyperiongrabber.ng.common.network.transport.HyperionTransportPreferenceBinding
 import com.elhanko.hyperiongrabber.ng.tv.R
 import com.elhanko.hyperiongrabber.ng.tv.activities.NetworkScanActivity
 import java.lang.ref.WeakReference
@@ -46,6 +47,28 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
                 getString(CommonR.string.pref_title_port),
                 prefs.getInt(CommonR.string.pref_key_port).toString()
         )
+
+        val flatBufferEnabled = HyperionTransportPreferenceBinding.isFlatBufferEnabled(
+                prefs.getString(CommonR.string.pref_key_transport, null))
+        val flatBufferTransport = GuidedAction.Builder(context)
+                .id(ACTION_FLATBUFFER_TRANSPORT)
+                .title(getString(CommonR.string.pref_title_flatbuffer_transport))
+                .description(if (flatBufferEnabled) {
+                    CommonR.string.pref_summary_flatbuffer_transport_enabled
+                } else {
+                    CommonR.string.pref_summary_flatbuffer_transport_disabled
+                })
+                .multilineDescription(true)
+                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID)
+                .checked(flatBufferEnabled)
+                .build()
+        val enterFlatBufferPort = unSignedNumberAction(
+                ACTION_FLATBUFFER_PORT,
+                getString(CommonR.string.pref_title_flatbuffer_port),
+                HyperionTransportPreferenceBinding.flatBufferPortOrDefault(
+                        prefs.getString(CommonR.string.pref_key_flatbuffer_port, null))
+        )
+        enterFlatBufferPort.isEnabled = flatBufferEnabled
 
         val enterHorizontalLEDCount = unSignedNumberAction(
                 ACTION_X_LED_COUNT,
@@ -150,6 +173,8 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
 
         actions.add(enterHost)
         actions.add(enterPort)
+        actions.add(flatBufferTransport)
+        actions.add(enterFlatBufferPort)
         actions.add(enterHorizontalLEDCount)
         actions.add(enterVerticalLEDCount)
         actions.add(startOnBoot)
@@ -184,6 +209,8 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
             try {
                 val host = assertStringValue(ACTION_HOST_NAME)
                 val port = assertIntValue(ACTION_PORT)
+                val flatBufferEnabled = findActionById(ACTION_FLATBUFFER_TRANSPORT)!!.isChecked
+                val flatBufferPort = if (flatBufferEnabled) assertFlatBufferPortValue() else null
                 val xLED = assertIntValue(ACTION_X_LED_COUNT)
                 val yLED = assertIntValue(ACTION_Y_LED_COUNT)
                 val startOnBootEnabled = findActionById(ACTION_START_ON_BOOT)!!.isChecked
@@ -195,6 +222,12 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
 
                 prefs.putString(CommonR.string.pref_key_host, host)
                 prefs.putInt(CommonR.string.pref_key_port, port)
+                prefs.putString(
+                        CommonR.string.pref_key_transport,
+                        HyperionTransportPreferenceBinding.persistedValue(flatBufferEnabled))
+                if (flatBufferPort != null) {
+                    prefs.putInt(CommonR.string.pref_key_flatbuffer_port, flatBufferPort)
+                }
                 prefs.putInt(CommonR.string.pref_key_x_led, xLED)
                 prefs.putInt(CommonR.string.pref_key_y_led, yLED)
                 prefs.putBoolean(CommonR.string.pref_key_boot, startOnBootEnabled)
@@ -210,6 +243,21 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
             } catch (ignored: AssertionError) {
             }
 
+            return
+
+        } else if (action.id == ACTION_FLATBUFFER_TRANSPORT) {
+            val enabled = action.isChecked
+            prefs.putString(
+                    CommonR.string.pref_key_transport,
+                    HyperionTransportPreferenceBinding.persistedValue(enabled))
+            action.description = getString(if (enabled) {
+                CommonR.string.pref_summary_flatbuffer_transport_enabled
+            } else {
+                CommonR.string.pref_summary_flatbuffer_transport_disabled
+            })
+            findActionById(ACTION_FLATBUFFER_PORT)?.isEnabled = enabled
+            notifyActionIdChanged(ACTION_FLATBUFFER_TRANSPORT)
+            notifyActionIdChanged(ACTION_FLATBUFFER_PORT)
             return
 
         } else if (action.id == ACTION_DISCOVER) {
@@ -274,6 +322,15 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
         return super.onSubGuidedActionClicked(action)
     }
 
+    private fun assertFlatBufferPortValue(): Int {
+        val value = assertStringValue(ACTION_FLATBUFFER_PORT)
+        if (!HyperionTransportPreferenceBinding.isValidPort(value)) {
+            showToast(getString(CommonR.string.pref_error_invalid_flatbuffer_port))
+            throw AssertionError("FlatBuffer port is not valid")
+        }
+        return HyperionTransportPreferenceBinding.requireValidPort(value)
+    }
+
     /** tries to connect to Hyperion and sets the given color for 5 seconds  */
     private fun testHyperionColor(hostName: String, port: Int, priority: Int, color: Int) {
         TestTask(requireContext()).execute(TestSpec(hostName, port, priority, color))
@@ -282,6 +339,8 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
     companion object {
         private const val ACTION_HOST_NAME = 100L
         private const val ACTION_PORT = 110L
+        private const val ACTION_FLATBUFFER_TRANSPORT = 115L
+        private const val ACTION_FLATBUFFER_PORT = 116L
         private const val ACTION_START_ON_BOOT = 120L
         private const val ACTION_X_LED_COUNT = 130L
         private const val ACTION_Y_LED_COUNT = 140L

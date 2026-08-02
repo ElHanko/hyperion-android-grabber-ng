@@ -21,16 +21,19 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.elhanko.hyperiongrabber.ng.common.BootActivity;
 import com.elhanko.hyperiongrabber.ng.common.HyperionScreenService;
+import com.elhanko.hyperiongrabber.ng.common.network.transport.HyperionTransportStatus;
 
 public class MainActivity extends AppCompatActivity implements ImageView.OnClickListener,
         ImageView.OnFocusChangeListener {
     public static final int REQUEST_MEDIA_PROJECTION = 1;
     private static final String TAG = "DEBUG";
     private boolean mRecorderRunning = false;
+    private String mActiveTransportName;
     private static MediaProjectionManager mMediaProjectionManager;
 
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
@@ -38,11 +41,17 @@ public class MainActivity extends AppCompatActivity implements ImageView.OnClick
         public void onReceive(Context context, Intent intent) {
             boolean checked = intent.getBooleanExtra(HyperionScreenService.BROADCAST_TAG, false);
             mRecorderRunning = checked;
+            String transportName = intent.getStringExtra(HyperionScreenService.BROADCAST_TRANSPORT);
+            if (HyperionTransportStatus.connectedUsing(transportName) != null) {
+                mActiveTransportName = transportName;
+            }
             String error = intent.getStringExtra(HyperionScreenService.BROADCAST_ERROR);
             if (error != null &&
                     (Build.VERSION.SDK_INT < Build.VERSION_CODES.N ||
                             !HyperionGrabberTileService.isListening())) {
-                Toast.makeText(getBaseContext(), error, Toast.LENGTH_LONG).show();
+                Toast.makeText(getBaseContext(),
+                        HyperionTransportStatus.formatError(transportName, error),
+                        Toast.LENGTH_LONG).show();
             }
             setImageViews(checked, checked);
         }
@@ -149,8 +158,14 @@ public class MainActivity extends AppCompatActivity implements ImageView.OnClick
 
     private void setImageViews(boolean running, boolean animated) {
         View rainbow = findViewById(R.id.sweepGradientView);
-        View message = findViewById(R.id.grabberStartedText);
+        TextView message = findViewById(R.id.grabberStartedText);
         View buttonImage = findViewById(R.id.power_toggle);
+        String transportStatus = HyperionTransportStatus.connectedUsing(mActiveTransportName);
+        message.setText(transportStatus == null
+                ? getString(com.elhanko.hyperiongrabber.ng.common.R.string.message_service_started)
+                : getString(com.elhanko.hyperiongrabber.ng.common.R.string
+                        .message_service_started_with_transport, transportStatus));
+        message.setContentDescription(message.getText());
         if (running) {
             if (animated){
                 fadeView(rainbow, true);

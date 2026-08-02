@@ -17,6 +17,8 @@ import android.widget.Toast;
 
 import com.elhanko.hyperiongrabber.ng.common.BootActivity;
 import com.elhanko.hyperiongrabber.ng.common.HyperionScreenService;
+import com.elhanko.hyperiongrabber.ng.common.network.transport.HyperionTransportPreferenceBinding;
+import com.elhanko.hyperiongrabber.ng.common.network.transport.HyperionTransportStatus;
 import com.elhanko.hyperiongrabber.ng.common.util.Preferences;
 
 @RequiresApi(api = Build.VERSION_CODES.N)
@@ -31,10 +33,13 @@ public class HyperionGrabberTileService extends TileService {
             Tile tile = getQsTile();
             boolean running = intent.getBooleanExtra(HyperionScreenService.BROADCAST_TAG, false);
             String error = intent.getStringExtra(HyperionScreenService.BROADCAST_ERROR);
+            String transportName = intent.getStringExtra(HyperionScreenService.BROADCAST_TRANSPORT);
             tile.setState(running ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
             tile.updateTile();
             if (error != null) {
-                Toast.makeText(getBaseContext(), error, Toast.LENGTH_LONG).show();
+                Toast.makeText(getBaseContext(),
+                        HyperionTransportStatus.formatError(transportName, error),
+                        Toast.LENGTH_LONG).show();
             }
         }
     };
@@ -126,10 +131,20 @@ public class HyperionGrabberTileService extends TileService {
      */
     private boolean startSetupIfNeeded(){
         Preferences preferences = new Preferences(getApplicationContext());
+        boolean flatBufferEnabled = HyperionTransportPreferenceBinding.isFlatBufferEnabled(
+                preferences.getString(
+                        com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_transport,
+                        null));
+        String selectedPort = flatBufferEnabled
+                ? HyperionTransportPreferenceBinding.flatBufferPortOrDefault(preferences.getString(
+                        com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_flatbuffer_port,
+                        null))
+                : preferences.getString(
+                        com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_port,
+                        null);
         if (TextUtils.isEmpty(preferences.getString(
                 com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_host, null))
-                || preferences.getInt(
-                com.elhanko.hyperiongrabber.ng.common.R.string.pref_key_port, -1) == -1) {
+                || !HyperionTransportPreferenceBinding.isValidPort(selectedPort)) {
             Intent settingsIntent = new Intent(this, SettingsActivity.class);
             settingsIntent.putExtra(SettingsActivity.EXTRA_SHOW_TOAST_KEY, SettingsActivity.EXTRA_SHOW_TOAST_SETUP_REQUIRED_FOR_QUICK_TILE);
             settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
