@@ -70,15 +70,52 @@ and does not start the grabber.
 
 The former `/24` subnet probe has been removed together with `NetworkScanner`,
 `HyperionScannerTask`, `ScanResultActivity`, and their unused resources and
-dependencies. Offline JVM tests cover result validation and grouping, IPv4 and
-IPv6 behavior, strict TXT decoding, service loss, serialized resolution,
-generation isolation, repeated start/stop, and atomic explicit selection.
+dependencies.
 
-Discovery has not yet been validated on the target Fire TV hardware. The manual
-Fire OS checks documented below remain required before device compatibility is
-claimed. Network multicast filtering, client isolation, and OEM NSD behavior
-can still prevent discovery, so manual configuration remains the supported
-fallback.
+## Automated validation
+
+Offline JVM tests cover result validation and grouping, IPv4 and IPv6 behavior,
+strict TXT decoding, service loss, serialized resolution, generation isolation,
+repeated start/stop, synchronous start failure, and atomic explicit selection.
+The tests use platform-independent fakes and do not require an Android device,
+LAN, or external Hyperion server.
+
+## Real Fire TV validation
+
+The implemented discovery flow was successfully validated on August 2, 2026,
+using an Amazon Fire TV Stick 4K Max, model AFTKRT, running Fire OS 8.1.8.0 and
+Android API 30. The observed flow confirmed:
+
+- successful application startup and opening of TV setup and discovery;
+- discovery of a real Hyperion NG 2.2.1 server through Android NSD/mDNS and
+  `_hyperiond-protobuf._tcp.`;
+- resolution of the advertised Protocol Buffers SRV port `19445`;
+- explicit server selection and transfer of the discovered host and port into
+  the existing configuration;
+- connection through the existing Protocol Buffers transport, followed by
+  screen capture and LED output;
+- retry and cancellation behavior;
+- leaving the discovery view without a stale active search remaining;
+- continued availability of manual host and port configuration;
+- usable Fire TV D-pad navigation;
+- no observed crash or fatal exception during the tested flow.
+
+This validation covers the TV application only. It does not claim Mobile
+hardware validation. Protocol Buffers remains the production default, and
+FlatBuffer was neither enabled nor tested as part of this validation.
+
+## Remaining limitations
+
+- Discovery depends on mDNS being advertised and allowed by the local network.
+  Client isolation, multicast filtering, VLAN boundaries, or device-specific NSD
+  behavior can still prevent results.
+- API 30 resolution exposes one host address per resolved `NsdServiceInfo`; it
+  does not provide the complete address list available through newer APIs.
+- Only the usable Protocol Buffers service is browsed. FlatBuffer discovery and
+  transport are not implemented.
+- Manual host and port configuration remains the complete fallback and is not
+  replaced by discovery.
+- The discovery flow has not been validated on Mobile hardware.
 
 ## Original implementation audit
 

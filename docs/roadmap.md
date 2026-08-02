@@ -117,7 +117,7 @@ purpose or the stable default.
 
 ### Phase 3A – Modern Hyperion discovery
 
-**Status:** In progress
+**Status:** Completed
 
 Phase 3A replaces an obsolete network-search implementation while preserving the
 same connection setup purpose. Its scope is to:
@@ -140,8 +140,14 @@ enable FlatBuffer, does not select a transport, and does not expand the product
 beyond screen capture and Hyperion connectivity. Manual host and port entry
 remains a complete fallback when mDNS is unavailable or unsuitable.
 
-The implementation architecture, original scanner assessment, automated test
-strategy, and remaining hardware validation are documented in the
+The discovery flow was validated on Fire OS 8 / Android API 30 against a real
+Hyperion NG 2.2.1 ProtoServer. The validation confirmed service discovery,
+resolved-port selection, preference transfer, Protocol Buffers connection,
+screen capture, LED output, retry, cancellation, lifecycle cleanup, and D-pad
+operation. FlatBuffer was neither enabled nor tested as part of Phase 3A.
+
+The implementation architecture, original scanner assessment, automated
+validation, and real Fire TV validation are documented in the
 [discovery audit](discovery-audit.md).
 
 ### Phase 3B – Experimental FlatBuffer transport

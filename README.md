@@ -17,9 +17,9 @@ Hyperion NG 2.2.1 and hardens the TCP transport. Its builds, automated tests,
 signed update installation, continuous screen capture, real-server operation,
 and reconnect behavior were successfully validated on the target Fire TV on
 August 2, 2026. The unreleased 2.2.0 development line adds optional Android NSD
-discovery for Hyperion ProtoServers. Its discovery flow is automatically tested,
-but has not yet completed the separate Fire TV hardware validation. See the
-[changelog](CHANGELOG.md) for details.
+discovery for Hyperion ProtoServers. The implemented discovery flow is covered
+by automated tests and was validated on Fire OS 8 / Android API 30 against a
+real Hyperion NG 2.2.1 server. See the [changelog](CHANGELOG.md) for details.
 
 ## Project roadmap
 
@@ -131,8 +131,10 @@ Fire TV uses the same settings. TV version 2.1.1 was successfully exercised on
 the documented AFTKRT device with continuous capture and LED output against a
 real Hyperion NG 2.2.1 server. Reconnect resumed operation after a real server
 interruption, while intentionally stopping the grabber did not cause an
-unwanted reconnect. Those 2.1.1 tests did not include the new 2.2.0 discovery
-screen, which still requires its documented manual Fire TV validation.
+unwanted reconnect. The 2.2.0 discovery flow was subsequently validated on the
+same Fire OS 8 / Android API 30 target with Android NSD, explicit endpoint
+selection, the existing Protocol Buffers connection, capture, and LED output.
+Manual host and port configuration remains available.
 
 On mobile, open Settings and choose **Find Hyperion servers** to use the same
 manual-start discovery flow. Direct editing of the host and port preferences
@@ -220,14 +222,15 @@ replies.
 - Protocol Buffers through the ProtoServer is currently used and remains
   supported by Hyperion NG 2.2.1. Hyperion's source records a longer-term plan
   to retire the ProtoServer after third-party clients have migrated.
-- FlatBuffer transport is not part of this phase and requires a separate
-  evaluation.
+- Experimental FlatBuffer transport is not yet implemented. Protocol Buffers
+  remains the stable default.
 - Automatic discovery currently browses only the Protocol Buffers DNS-SD service.
   FlatBuffer discovery, FlatBuffer selection, SSDP, and automatic transport
   switching are not implemented.
-- The new discovery screen has automated coverage but has not yet been manually
-  validated on Fire TV hardware. Multicast filtering, client isolation, VLANs,
-  or OEM NSD behavior may prevent results; manual configuration remains available.
+- The discovery screen has automated coverage and has been validated on the
+  documented Fire OS 8 / Android API 30 target. Multicast filtering, client
+  isolation, VLANs, or OEM NSD behavior on other devices or networks may still
+  prevent results; manual configuration remains available.
 - `targetSdk 26` is intentionally temporary. Changes for newer MediaProjection
   and foreground-service requirements remain separate follow-up work.
 - The mobile APK was built and automatically tested, but was not tested on

@@ -29,11 +29,20 @@
 - Removed the legacy `/24` subnet scanner, sequential fixed-port TCP probing,
   deprecated scanner task, and single-result activity.
 
-### Verification status
+### Verified
 
 - Platform-independent discovery tests pass without a LAN or Android device.
-- Manual Fire TV discovery validation is still pending and is not claimed by
-  this unreleased entry.
+- Android NSD discovery on an Amazon Fire TV Stick 4K Max, model AFTKRT,
+  running Fire OS 8.1.8.0 and Android API 30.
+- Discovery of a real Hyperion NG 2.2.1 ProtoServer through
+  `_hyperiond-protobuf._tcp.` and resolution of its SRV port `19445`.
+- Explicit server selection and transfer of the discovered host and port into
+  the existing configuration, while retaining manual configuration.
+- Successful connection through the existing Protocol Buffers transport,
+  followed by screen capture and LED output.
+- Retry, cancellation, leaving the discovery view without a stale active
+  search, and D-pad operation during the tested Fire TV flow.
+- No crash or fatal exception was observed during the tested discovery flow.
 
 ## [2.1.1] - 2026-08-02
 
