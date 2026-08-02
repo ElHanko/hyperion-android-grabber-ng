@@ -16,7 +16,10 @@ test on Fire OS 8. Version 2.1.1 aligns the Protocol Buffers protocol with
 Hyperion NG 2.2.1 and hardens the TCP transport. Its builds, automated tests,
 signed update installation, continuous screen capture, real-server operation,
 and reconnect behavior were successfully validated on the target Fire TV on
-August 2, 2026. See the [changelog](CHANGELOG.md) for details.
+August 2, 2026. The unreleased 2.2.0 development line adds optional Android NSD
+discovery for Hyperion ProtoServers. Its discovery flow is automatically tested,
+but has not yet completed the separate Fire TV hardware validation. See the
+[changelog](CHANGELOG.md) for details.
 
 ## Features
 
@@ -24,6 +27,7 @@ August 2, 2026. See the [changelog](CHANGELOG.md) for details.
 - RGB and RGBA image transfer, plus an optional average-color mode
 - Separate user interfaces for mobile, Android TV, and Fire TV
 - Configurable server address, priority, frame rate, and capture scaling
+- Optional automatic discovery of Hyperion Protocol Buffers servers
 - Optional automatic reconnect after a transport failure
 - Start-on-boot and quick-access features provided by the existing apps
 - Complete request/reply framing with explicit Hyperion error handling
@@ -81,7 +85,13 @@ exact signed update path was successfully validated on the target Fire TV.
 
 ## Configuration
 
-Configure at least these values in the application settings:
+The application can discover Hyperion ProtoServers advertised through DNS-SD.
+Open **Find Hyperion servers**, explicitly start the search, and select a result
+to save its resolved host and actual advertised port. Search can be cancelled or
+repeated, and it never selects a result or starts the grabber automatically.
+
+Manual configuration remains available before, during, and after discovery.
+Configure at least these values when entering an endpoint manually:
 
 - Hyperion server hostname or IP address
 - ProtoServer port, default `19445`
@@ -91,21 +101,32 @@ Configure at least these values in the application settings:
 - frame rate and optional average-color mode
 - optional start on device boot
 
-The Hyperion ProtoServer must be enabled and reachable. New automatic server
-discovery is not part of this release.
+The Hyperion ProtoServer and its mDNS advertisement must be enabled for automatic
+discovery. The default port `19445` applies only to manual configuration;
+discovery always uses the resolved DNS-SD port. If multicast is filtered, client
+isolation is enabled, or no service is advertised, enter the host and port
+manually. Starting or cancelling a search does not erase existing settings.
 
 ## Android TV and Fire TV usage
 
 After installation, open the TV application from the Leanback launcher. Enter
-the Hyperion host, port, and capture settings during setup, then use the app to
-start or stop screen capture. Accept the Android system screen-capture prompt
-when it appears.
+the Hyperion host and port manually or use **Search for Hyperion servers** during
+setup. The search starts only after pressing **Start search**, its result list is
+D-pad operable, and **Manual setup** remains available. Selecting a result saves
+its discovered Protocol Buffers endpoint; it does not begin capture. Configure
+the remaining capture settings, then use the app to start or stop screen capture.
+Accept the Android system screen-capture prompt when it appears.
 
 Fire TV uses the same settings. TV version 2.1.1 was successfully exercised on
 the documented AFTKRT device with continuous capture and LED output against a
 real Hyperion NG 2.2.1 server. Reconnect resumed operation after a real server
 interruption, while intentionally stopping the grabber did not cause an
-unwanted reconnect.
+unwanted reconnect. Those 2.1.1 tests did not include the new 2.2.0 discovery
+screen, which still requires its documented manual Fire TV validation.
+
+On mobile, open Settings and choose **Find Hyperion servers** to use the same
+manual-start discovery flow. Direct editing of the host and port preferences
+remains available and the saved summaries refresh after an explicit selection.
 
 ## Docker builds
 
@@ -157,7 +178,10 @@ message classes. JVM tests start local `ServerSocket` instances, so regular test
 runs work offline and require neither Android hardware nor an external Hyperion
 server. They cover COLOR, RGB/RGBA IMAGE, CLEAR, CLEARALL, big-endian framing,
 fragmented packets, timeouts, EOF, server errors, and reconnect after an
-emulated connection failure.
+emulated connection failure. Additional platform-independent tests cover
+discovery result validation, TXT decoding, ID and endpoint deduplication, IPv4
+and IPv6 handling, service loss, serialized resolution, stale callbacks,
+repeated lifecycle operations, and atomic host/port selection.
 
 The complete test task is:
 
@@ -188,7 +212,12 @@ replies.
   to retire the ProtoServer after third-party clients have migrated.
 - FlatBuffer transport is not part of this phase and requires a separate
   evaluation.
-- New mDNS/SSDP server discovery is not part of this phase.
+- Automatic discovery currently browses only the Protocol Buffers DNS-SD service.
+  FlatBuffer discovery, FlatBuffer selection, SSDP, and automatic transport
+  switching are not implemented.
+- The new discovery screen has automated coverage but has not yet been manually
+  validated on Fire TV hardware. Multicast filtering, client isolation, VLANs,
+  or OEM NSD behavior may prevent results; manual configuration remains available.
 - `targetSdk 26` is intentionally temporary. Changes for newer MediaProjection
   and foreground-service requirements remain separate follow-up work.
 - The mobile APK was built and automatically tested, but was not tested on
@@ -199,9 +228,11 @@ replies.
 Dave Anderson developed the original Hyperion Android Grabber. Mathias
 (ElHanko) continues it as Hyperion Grabber NG. The first modernization phase
 updated the project identity, Java packages, AndroidX stack, View Binding, and
-reproducible build and signing environment. The second phase begins with the
+reproducible build and signing environment. The second phase delivered the
 documented Hyperion NG 2.2.1 Protocol Buffers compatibility update and hardened
-TCP transport. Earlier releases remain available in the
+TCP transport. The third phase adds optional Android NSD discovery without
+changing the production Protocol Buffers transport or removing manual
+configuration. Earlier releases remain available in the
 [changelog](CHANGELOG.md).
 
 ## License

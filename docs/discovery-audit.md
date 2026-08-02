@@ -2,7 +2,12 @@
 
 ## Scope and evidence
 
-This document audits the existing discovery flow and proposes a Phase 3 architecture. It does not implement discovery, change the user interface, add a dependency, or change the manifest. Protocol Buffers remains the only production transport. Manual host and port configuration remains supported and discovery remains optional.
+This document contains the original discovery audit and the architecture that was
+implemented from it during Phase 3. The sections beginning with **Original
+implementation audit** preserve the pre-implementation findings and proposal;
+the **Implemented Phase 3 architecture** section records the current repository
+state. Protocol Buffers remains the only production transport. Manual host and
+port configuration remains supported and discovery remains optional.
 
 The Hyperion findings below were verified against the official `hyperion-project/hyperion.ng` tag `2.2.1`, in particular:
 
@@ -16,7 +21,66 @@ The Hyperion findings below were verified against the official `hyperion-project
 
 No private address or local network configuration is used in this document.
 
-## Current implementation
+## Implemented Phase 3 architecture
+
+The shared `common` module now provides Android NSD discovery for the usable
+Hyperion ProtoServer endpoint. `AndroidNsdDiscoveryBackend` calls
+`NsdManager.discoverServices()` with `NsdManager.PROTOCOL_DNS_SD` and exactly
+`_hyperiond-protobuf._tcp.`. It does not browse the FlatBuffer, JSON, HTTP, or
+HTTPS service types. A resolved SRV port is retained as published; `19445`
+remains only the default for manual configuration.
+
+The implementation is divided into the following responsibilities:
+
+| Component | Implemented responsibility |
+| --- | --- |
+| `AndroidNsdDiscoveryBackend` | Owns the Android discovery listener, legacy API-30 resolution calls, TXT extraction, and short-lived multicast lock. |
+| `HyperionDiscoveryController` | Owns one generation, rejects parallel starts, serializes resolves, removes lost services, and ignores stale callbacks. |
+| `HyperionServerStore` | Validates resolved records, strictly decodes UTF-8 TXT values, groups results, retains addresses, and produces deterministic immutable snapshots. |
+| `DiscoveredHyperionServer` | Exposes Android-independent identity, display metadata, address family, all observed addresses, selected ProtoServer endpoint, and availability state. |
+| `HyperionDiscovery` | Provides the shared application-facing `start()`, `stop()`, `isRunning()`, result, and close operations with UI callbacks on the main thread. |
+| `DiscoverySelection` and `HostPortStore` | Validate an explicit selection and write the discovered host and SRV port together without changing preferences during search. |
+
+Each found service is placed in a de-duplicated queue. The controller resolves
+exactly one service at a time, advances after either success or failure, clears
+pending work on stop, and removes queued or resolved entries after
+`onServiceLost()`. A monotonically increasing generation prevents callbacks
+from an earlier run from changing a later run.
+
+TXT attributes are read only from the resolved `NsdServiceInfo`. The `id` and
+`version` values use a strict UTF-8 decoder; missing or malformed values are
+treated as absent. Results group first by a non-empty Hyperion `id` and otherwise
+by normalized host and resolved port. Multiple addresses observed for one ID are
+retained, with a usable IPv4 address preferred for the existing preference
+format and IPv6 preserved as an `InetAddress` until selection.
+
+The common manifest declares only the additional normal
+`CHANGE_WIFI_MULTICAST_STATE` permission needed for discovery. The backend
+acquires a non-reference-counted `WifiManager.MulticastLock` immediately before
+starting NSD and releases it on cancellation, start failure, stop failure,
+successful stop, or owner destruction. The lock is not used by normal grabber
+operation.
+
+Mobile settings now expose a **Find Hyperion servers** action. TV onboarding and
+TV settings use the same discovery component and result adapter. Both flows
+require the user to press **Start search**, allow cancellation and retry, show
+multiple resolved endpoints, retain manual setup, and save nothing until a row
+is explicitly selected. Selection stores the host and discovered port together
+and does not start the grabber.
+
+The former `/24` subnet probe has been removed together with `NetworkScanner`,
+`HyperionScannerTask`, `ScanResultActivity`, and their unused resources and
+dependencies. Offline JVM tests cover result validation and grouping, IPv4 and
+IPv6 behavior, strict TXT decoding, service loss, serialized resolution,
+generation isolation, repeated start/stop, and atomic explicit selection.
+
+Discovery has not yet been validated on the target Fire TV hardware. The manual
+Fire OS checks documented below remain required before device compatibility is
+claimed. Network multicast filtering, client isolation, and OEM NSD behavior
+can still prevent discovery, so manual configuration remains the supported
+fallback.
+
+## Original implementation audit
 
 ### Classes and callers
 
@@ -192,7 +256,7 @@ Discovery should run only while its visible screen is resumed and the user has e
 - Marshal all state changes to one application-controlled executor or main-thread `Handler`; publish immutable snapshots to the UI.
 - Never retain an `Activity` in the NSD adapter. The owning screen subscribes while visible and detaches before the controller is closed.
 
-## Proposed architecture
+## Original proposed architecture
 
 The implementation should live primarily in the shared `common` module and isolate Android NSD callbacks from pure result logic.
 
