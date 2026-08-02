@@ -25,6 +25,11 @@ The product constraints are fixed:
 No dependency, schema, generated source, runtime client, abstraction, preference,
 UI, discovery, test, manifest, or version change is part of this audit.
 
+The architecture analysis in this document remains the original audit record.
+The later, deliberately limited Stage 1 implementation is recorded under
+**Stage 1 implementation status** in section 6; it does not change the runtime
+transport conclusions or authorize any later stage.
+
 ### Documentation consistency at the audit point
 
 The existing [roadmap](roadmap.md), [discovery audit](discovery-audit.md),
@@ -394,7 +399,7 @@ for Java 8. That bytecode level is compatible in principle with this project's
 JDK 17 compilation and Android toolchain, but Stage 1 must still prove D8/Android
 API 21 compatibility in both app variants.
 
-### Recommended reproducible approach
+### Audited reproducible approach
 
 Stage 1 should use all of the following as one reproducibility unit:
 
@@ -430,9 +435,10 @@ tools 36, Gradle 9.5.0, AGP 9.3.0, `minSdk 21`, `compileSdk 36`, and temporary
 `targetSdk 26`. Stage 1 must run `:common:test`, assemble both Mobile and TV debug
 APKs, and exercise the release build before runtime integration.
 
-APK cost is currently unknown. Measure both APKs before and after the runtime and
-generated sources with `apkanalyzer`, record compressed/uncompressed deltas, and
-inspect the dependency graph. Do not predict a size saving from the wire format.
+APK cost was unknown at the audit point. Measure both APKs before and after the
+runtime and generated sources with `apkanalyzer`, record compressed/uncompressed
+deltas, and inspect the dependency graph. Do not predict a size saving from the
+wire format.
 
 Hyperion's schemas are part of an MIT-licensed repository whose 2.2.1 license
 attributes the Hyperion Project (2014-2026). The Google FlatBuffers compiler and
@@ -440,6 +446,80 @@ Java runtime are Apache-2.0 licensed. Vendored schemas must retain provenance an
 the applicable Hyperion MIT notice; distribution documentation must retain the
 runtime's Apache-2.0 notice. The schema files have no individual header, so the
 repository-level provenance must not be lost.
+
+### Stage 1 implementation status
+
+**Status:** Completed on August 2, 2026
+
+Stage 1 implements schema and build integration only. It does not contain a
+FlatBuffer socket client, outer TCP framing, registration lifecycle, service or
+transport integration, preferences, settings UI, discovery, reconnect behavior,
+or real-server/hardware validation. Protocol Buffers remains the only usable
+production transport.
+
+The implemented reproducibility boundary is:
+
+- byte-for-byte copies of the two Hyperion NG 2.2.1 schemas under
+  `common/src/main/flatbuffers/hyperion-ng-2.2.1/`, with tag, commit, immutable
+  URLs, SHA-256 values, license notices, and update instructions in the adjacent
+  provenance file;
+- the official Linux x86-64 `flatc` 25.9.23 release artifact, verified before
+  extraction with SHA-256
+  `de0c6ad114a5a686ecf64322528c602c7d4512446a93f290f54f00ee5abea487`;
+- the official FlatBuffers commit
+  `187240970746d00bbd26b0f5873ed54d2477f9f3`. Its Java POM declares
+  `com.google.flatbuffers:flatbuffers-java:25.9.23`, but this release is absent
+  from Maven Central. Docker therefore verifies the tagged source archive,
+  compiles the Java 8 runtime, creates a timestamp-normalized JAR, verifies its
+  deterministic SHA-256
+  `89e9f694825de4848e0c676dd6478b6c005e8cef2514bc77c54ecd24446d9c17`,
+  and supplies that exact coordinate through an image-local Maven repository;
+- a typed Gradle task named `generateFlatBuffersJava`, with declared schema and
+  compiler inputs, version and option inputs, and a declared output directory at
+  `common/build/generated/source/flatbuffers/main`;
+- AGP's generated-source Variant API, so compilation depends on generation while
+  generated Java remains ignored and uncommitted;
+- `--java` as the complete generation option set. Mutable and object APIs are not
+  generated.
+
+Generation produces exactly these ten top-level classes in package
+`hyperionnet`: `Clear`, `Color`, `Command`, `Image`, `ImageType`, `NV12Image`,
+`RawImage`, `Register`, `Reply`, and `Request`. Two clean generations produced
+identical per-file hashes and the manifest tree hash
+`cfaa9736bf58371f6258a26614553010c74decc0fe9693cc7dfb95dd2470f4d3`.
+A second unchanged Gradle invocation reported the task `UP-TO-DATE`.
+
+The Java generator emits version guards and root accessors, but it does not emit
+a structural verifier API. The generated size-prefixed root helpers are also not
+the Hyperion TCP frame described in section 4 and are unused in Stage 1. The
+socket implementation in Stage 2 must establish explicit bounds and parsing
+validation before it accepts network input; Stage 1 round-trip tests are not a
+claim of hostile-input verification.
+
+Seven offline JVM tests exercise version guards and schema-consistent round trips
+for registration, color, three-byte-per-pixel raw image data, four-byte-per-pixel
+raw image data, clear, success replies, and error replies. They use no sockets
+and test no framing. The complete regular test matrix passed: Common contained
+51 tests with the one existing opt-in ProtoServer test skipped, Mobile contained
+one passing test, and TV had no JVM test sources.
+
+Both Debug and signed Release builds completed for Mobile and TV. Release APK
+measurements against the pre-Stage-1 build from the same branch were:
+
+| APK | Before | After | APK delta | Percentage | Uncompressed delta |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Mobile | 4,279,696 bytes | 4,316,759 bytes | +37,063 bytes | +0.8660% | +99,117 bytes |
+| TV | 5,155,366 bytes | 5,189,829 bytes | +34,463 bytes | +0.6685% | +95,360 bytes |
+
+Both APKs retain application ID `com.elhanko.hyperiongrabber.ng`, version name
+`2.1.1`, `minSdk 21`, temporary `targetSdk 26`, Mobile versionCode `1101`, TV
+versionCode `2101`, and the same signing-certificate SHA-256 digest as the
+baseline. DEX analysis confirms all ten generated top-level classes in each APK.
+It also confirms 68 classes from the complete official Java runtime; its bundled
+reflection and FlexBuffers support is present as library code but is not called,
+and no reflection schema or FlexBuffers API was added to project code. Debug and
+Release dependency insight each resolve exactly one FlatBuffers runtime version:
+`25.9.23`.
 
 ## 7. Proposed minimal transport abstraction
 
@@ -706,12 +786,14 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
 
 ### Stage 1 - Reproducible schema generation only
 
-- Add the two unmodified 2.2.1 schemas with provenance and checksums.
-- Pin FlatBuffers/`flatc` 25.9.23 in Docker with verified source/artifact checksum.
-- Add a custom `common` generation task and matching Java runtime.
-- Prove clean reproducibility, JDK 17/AGP 9.3.0/Gradle 9.5.0 compatibility,
+**Status:** Completed
+
+- Added the two unmodified 2.2.1 schemas with provenance and checksums.
+- Pinned FlatBuffers/`flatc` 25.9.23 in Docker with verified source/artifact checksum.
+- Added a custom `common` generation task and matching Java runtime.
+- Proved clean reproducibility, JDK 17/AGP 9.3.0/Gradle 9.5.0 compatibility,
   `minSdk 21` D8 compatibility, both variants' builds, licenses, and APK deltas.
-- Add no socket or service integration.
+- Added no socket or service integration.
 
 ### Stage 2 - Isolated FlatBuffer socket client
 
