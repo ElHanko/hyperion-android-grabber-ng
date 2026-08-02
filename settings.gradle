@@ -15,6 +15,14 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        maven {
+            name = 'flatBuffersPinnedRuntime'
+            url = uri(providers.environmentVariable('FLATBUFFERS_MAVEN_REPOSITORY')
+                    .orElse('/opt/flatbuffers-maven').get())
+            content {
+                includeModule('com.google.flatbuffers', 'flatbuffers-java')
+            }
+        }
         google()
         mavenCentral()
     }

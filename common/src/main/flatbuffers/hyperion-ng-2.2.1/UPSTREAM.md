@@ -33,9 +33,20 @@ inputs. No additional `.fbs` file is required for Java generation.
 - Asset SHA-256:
   `de0c6ad114a5a686ecf64322528c602c7d4512446a93f290f54f00ee5abea487`
 - Java runtime: `com.google.flatbuffers:flatbuffers-java:25.9.23`
+- Runtime source URL:
+  <https://github.com/google/flatbuffers/archive/187240970746d00bbd26b0f5873ed54d2477f9f3.tar.gz>
+- Runtime source SHA-256:
+  `cb4a0546919105755629e29913a0081f999a9296657469839f05b6fcd0e02ef1`
+- Reproducibly built runtime JAR SHA-256:
+  `89e9f694825de4848e0c676dd6478b6c005e8cef2514bc77c54ecd24446d9c17`
 
 The asset digest is published in the official GitHub release metadata and is
 verified again by the Docker build before the binary is extracted or executed.
+The official `v25.9.23` Java POM declares the runtime coordinate above, but that
+release is absent from Maven Central. The Docker build therefore verifies the
+exact tagged source archive, compiles its Java 8 runtime, creates a deterministic
+JAR, verifies the resulting JAR digest, and exposes the official coordinate from
+an image-local Maven repository. No runtime source or binary is committed here.
 
 ## Licenses and notices
 

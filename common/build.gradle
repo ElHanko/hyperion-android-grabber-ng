@@ -1,6 +1,147 @@
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
+
+import javax.inject.Inject
+
 plugins {
     id 'com.android.library'
     id 'com.google.protobuf'
+}
+
+abstract class GenerateFlatBuffersJava extends DefaultTask {
+    @InputFiles
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract ConfigurableFileCollection getSchemaFiles()
+
+    @InputFile
+    @PathSensitive(PathSensitivity.NONE)
+    abstract RegularFileProperty getCompilerExecutable()
+
+    @Input
+    abstract Property<String> getExpectedCompilerVersion()
+
+    @Input
+    abstract ListProperty<String> getCompilerArguments()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDirectory()
+
+    @Inject
+    abstract ExecOperations getExecOperations()
+
+    @Inject
+    abstract FileSystemOperations getFileSystemOperations()
+
+    @TaskAction
+    void generateSources() {
+        File compiler = compilerExecutable.get().asFile
+        if (!compiler.isFile() || !compiler.canExecute()) {
+            throw new GradleException("flatc is missing or not executable: ${compiler}")
+        }
+
+        ByteArrayOutputStream versionOutput = new ByteArrayOutputStream()
+        execOperations.exec {
+            executable compiler.absolutePath
+            args '--version'
+            standardOutput = versionOutput
+        }.assertNormalExitValue()
+
+        String actualVersion = versionOutput.toString('UTF-8').trim()
+        if (actualVersion != expectedCompilerVersion.get()) {
+            throw new GradleException(
+                    "Unexpected flatc version: '${actualVersion}', expected " +
+                            "'${expectedCompilerVersion.get()}'")
+        }
+
+        List<File> orderedSchemas = schemaFiles.files.sort { left, right ->
+            left.name <=> right.name
+        }
+        if (orderedSchemas.empty) {
+            throw new GradleException('No FlatBuffer schemas were configured')
+        }
+
+        File output = outputDirectory.get().asFile
+        fileSystemOperations.delete {
+            delete output
+        }
+        if (!output.mkdirs() && !output.isDirectory()) {
+            throw new GradleException("Unable to create FlatBuffer output directory: ${output}")
+        }
+
+        List<String> arguments = new ArrayList<>(compilerArguments.get())
+        arguments.addAll(['-o', output.absolutePath])
+        arguments.addAll(orderedSchemas.collect { it.absolutePath })
+
+        execOperations.exec {
+            executable compiler.absolutePath
+            args arguments
+        }.assertNormalExitValue()
+
+        List<String> expectedFiles = [
+                'hyperionnet/Clear.java',
+                'hyperionnet/Color.java',
+                'hyperionnet/Command.java',
+                'hyperionnet/Image.java',
+                'hyperionnet/ImageType.java',
+                'hyperionnet/NV12Image.java',
+                'hyperionnet/RawImage.java',
+                'hyperionnet/Register.java',
+                'hyperionnet/Reply.java',
+                'hyperionnet/Request.java'
+        ]
+        List<String> actualFiles = project.fileTree(output) {
+            include '**/*.java'
+        }.files.collect {
+            output.toPath().relativize(it.toPath()).toString().replace(File.separator, '/')
+        }.sort()
+
+        if (actualFiles != expectedFiles) {
+            throw new GradleException(
+                    "Unexpected FlatBuffer Java output. Expected ${expectedFiles}, got ${actualFiles}")
+        }
+    }
+}
+
+def flatBuffersSchemaDirectory = layout.projectDirectory.dir(
+        'src/main/flatbuffers/hyperion-ng-2.2.1')
+def generatedFlatBuffersJavaDirectory = layout.buildDirectory.dir(
+        'generated/source/flatbuffers/main')
+def flatcExecutableFile = layout.file(
+        providers.environmentVariable('FLATC')
+                .orElse('/usr/local/bin/flatc')
+                .map { new File(it) })
+
+def generateFlatBuffersJava = tasks.register(
+        'generateFlatBuffersJava', GenerateFlatBuffersJava) {
+    group = 'code generation'
+    description = 'Generates Java sources from the pinned Hyperion FlatBuffer schemas.'
+    schemaFiles.from(fileTree(flatBuffersSchemaDirectory) {
+        include '*.fbs'
+    })
+    compilerExecutable.set(flatcExecutableFile)
+    expectedCompilerVersion.set('flatc version 25.9.23')
+    compilerArguments.set(['--java'])
+    outputDirectory.set(generatedFlatBuffersJavaDirectory)
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.java?.addGeneratedSourceDirectory(
+                generateFlatBuffersJava,
+                GenerateFlatBuffersJava::getOutputDirectory)
+    }
 }
 
 android {
@@ -34,6 +175,7 @@ dependencies {
     implementation 'androidx.core:core:1.16.0'
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
     implementation 'androidx.preference:preference:1.2.1'
+    implementation 'com.google.flatbuffers:flatbuffers-java:25.9.23'
     implementation 'com.google.protobuf:protobuf-javalite:4.35.1'
 
     testImplementation 'junit:junit:4.13.2'
