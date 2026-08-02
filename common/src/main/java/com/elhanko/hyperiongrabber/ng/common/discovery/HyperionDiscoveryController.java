@@ -88,6 +88,7 @@ public final class HyperionDiscoveryController {
             state = State.IDLE;
             notifyFailure(0);
             notifyStopped();
+            return false;
         }
         return true;
     }

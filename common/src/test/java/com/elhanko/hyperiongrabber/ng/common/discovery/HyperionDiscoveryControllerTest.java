@@ -137,6 +137,19 @@ public class HyperionDiscoveryControllerTest {
         assertEquals(2, listener.stops);
     }
 
+    @Test
+    public void synchronousStartFailureReturnsFalseAndBecomesTerminal() {
+        FakeBackend backend = new FakeBackend();
+        backend.throwOnStart = true;
+        RecordingListener listener = new RecordingListener();
+        HyperionDiscoveryController controller = controller(backend, listener);
+
+        assertFalse(controller.start());
+        assertFalse(controller.isRunning());
+        assertEquals(1, listener.failures);
+        assertEquals(1, listener.stops);
+    }
+
     private static HyperionDiscoveryController controller(
             FakeBackend backend,
             RecordingListener listener) {
@@ -185,10 +198,14 @@ public class HyperionDiscoveryControllerTest {
         private int resolveCalls;
         private int concurrentResolves;
         private int maxConcurrentResolves;
+        private boolean throwOnStart;
 
         @Override
         public void start(long generation, DiscoveryCallback callback) {
             startCalls++;
+            if (throwOnStart) {
+                throw new IllegalStateException("Discovery start failed");
+            }
             discoveryCallback = callback;
         }
 
