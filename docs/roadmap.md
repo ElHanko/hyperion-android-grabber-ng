@@ -160,12 +160,12 @@ validation, and real Fire TV validation are documented in the
 | Stage 2 – Isolated socket client | Completed |
 | Stage 3 – Common transport boundary | Completed |
 | Stage 4 – Production lifecycle integration | Completed |
-| Stage 5 – Experimental settings UI | Planned |
+| Stage 5 – Experimental settings UI | Completed |
 | Stage 6 – Optional real-server integration | Planned |
 | Stage 7 – Real Fire TV validation | Planned |
 | Stage 8 – Phase 3 release completion | Planned |
 
-Stages 1 through 4 are complete. The two official Hyperion NG 2.2.1 schemas, pinned
+Stages 1 through 5 are complete. The two official Hyperion NG 2.2.1 schemas, pinned
 FlatBuffers 25.9.23 toolchain and runtime, reproducible Java generation, and
 schema-level offline tests are integrated into the build. An isolated socket
 client now implements the official TCP framing, registration, Color, RGB24 and
@@ -186,16 +186,18 @@ before replacement, drops frames while disconnected, and is stopped explicitly
 by intentional shutdown. Thirty-eight additional offline tests cover preference,
 lifecycle, reconnect, delegation, status, and no-fallback guarantees.
 
-FlatBuffer is internally wired but is still not selectable through the user
-interface. No FlatBuffer discovery, real-server test, or hardware validation has
-been implemented. Protocol Buffers remains the stable production default. Stage
-4 is complete; Stages 5 through 8 remain planned.
+FlatBuffer is now an explicit experimental opt-in in both Mobile and TV settings.
+The visible control stores only the existing string selection and retains separate
+ports; it does not live-swap a running capture session. No FlatBuffer discovery,
+real-server test, or hardware validation has been implemented. Protocol Buffers
+remains the stable production default. Stage 5 is complete; Stages 6 through 8
+remain planned.
 
-Protocol Buffers will remain the stable default transport, including for existing
-installations. FlatBuffer will be evaluated as an experimental opt-in transport:
+Protocol Buffers remains the stable default transport, including for existing
+installations. FlatBuffer is an experimental opt-in transport:
 
-- an explicit GUI checkbox will enable the experiment;
-- the checkbox will be disabled by default for new installations and updates;
+- an explicit GUI checkbox enables the experiment;
+- the checkbox is disabled by default for new installations and updates;
 - no installation will be migrated automatically to FlatBuffer;
 - there will be no silent fallback to Protocol Buffers after a FlatBuffer
   failure;
@@ -213,19 +215,18 @@ Hyperion transport abstraction
 - experimental FlatBuffer implementation
 ```
 
-The completed Stage 1 through Stage 4 validation covers generated code from the
+The completed Stage 1 through Stage 5 validation covers generated code from the
 official Hyperion NG FlatBuffer schema, the isolated framed socket client, both
-transport adapters, and the factory-driven production lifecycle. Later planned
-validation includes:
+transport adapters, the factory-driven production lifecycle, and the settings and
+status presentation contracts. Later planned validation includes:
 
 - an optional real-server integration test;
 - real Fire TV validation;
-- UI-driven transport switching and controlled restart testing;
 - verification that Protocol Buffers remains the unchanged default.
 
 FlatBuffer is a possible modern technical transport path, not an expansion of
-the application's purpose. Completing Stages 1 through 4 does not make it
-stable or generally available to users.
+the application's purpose. Completing Stages 1 through 5 makes FlatBuffer a
+visible experimental opt-in, not a stable or hardware-validated transport.
 
 ## Phase 4 – Android platform and lifecycle modernization
 

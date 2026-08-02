@@ -26,9 +26,9 @@ No dependency, schema, generated source, runtime client, abstraction, preference
 UI, discovery, test, manifest, or version change is part of this audit.
 
 The architecture analysis in this document remains the original audit record.
-The later, deliberately limited Stage 1 through Stage 4 implementations are
+The later, deliberately limited Stage 1 through Stage 5 implementations are
 recorded under their implementation-status headings in section 6. None of these
-stages makes FlatBuffer selectable through the application UI or authorizes a
+stages validates FlatBuffer against a real server or hardware, or authorizes a
 later integration stage.
 
 ### Documentation consistency at the audit point
@@ -772,6 +772,61 @@ wired FlatBuffer selection is therefore not yet a generally available or
 validated user feature. Those gates remain in Stages 5 through 8; Protocol
 Buffers remains the stable default.
 
+### Stage 5 implementation status
+
+**Status:** Completed on August 2, 2026
+
+Stage 5 makes the existing internal selection visible without adding a second
+persisted boolean. The shared Android-independent
+[`HyperionTransportPreferenceBinding`](../common/src/main/java/com/elhanko/hyperiongrabber/ng/common/network/transport/HyperionTransportPreferenceBinding.java)
+maps the non-persistent UI control to exactly `flatbuffer` when enabled and
+`protobuf` when disabled. Missing, empty, unknown, and differently cased values
+appear as the disabled Protocol Buffers default; merely opening settings does not
+rewrite them.
+
+Mobile uses a non-persistent AndroidX `CheckBoxPreference` titled **Use
+experimental FlatBuffer transport**. It retains the existing Protocol Buffers
+port field, shows the separate FlatBuffer port only while FlatBuffer is enabled,
+and preserves the latter value when it is hidden. The absent FlatBuffer port is
+presented as `19400` without storing that default. Input must be a decimal port
+in `1..65535`; empty, non-numeric, and out-of-range input is rejected with a
+specific message and no automatic correction.
+
+TV and Fire TV use the same binding in the existing Leanback guided settings.
+The D-pad-focusable experimental checkbox immediately enables or disables the
+separate FlatBuffer port action. The disabled action remains visible for context
+but is not focusable, so disabling it cannot leave focus on an inaccessible
+element. The warning is a multiline text summary rather than a touch-only
+dialog. It states that FlatBuffer is experimental, Protocol Buffers remains the
+recommended default, failures do not fall back automatically, and changes take
+effect on the next grabber start. The existing manual Protocol Buffers setup and
+ProtoServer discovery stay available and unchanged.
+
+The running transport remains independent of the newly stored choice. Mobile and
+TV status views read `SERVICE_TRANSPORT` from the service broadcast and show, for
+example, `Connected using Protocol Buffers` or `Connected using FlatBuffer
+(experimental)`. They retain the previous status behavior for broadcasts without
+that extra. Error toasts add the service-reported transport name as context while
+preserving the original error text. Neither UI derives an active transport from a
+preference, so changing the setting does not live-swap a running connection.
+
+Twenty new offline JVM tests cover the binding defaults and exact identifiers,
+port validation, status and error formatting, the Mobile and TV resource/source
+contract, visibility/focus behavior, discovery isolation, and use of the service
+transport extra. The complete forced matrix passed with 210 Common tests (one
+existing opt-in Protocol Buffers integration test skipped), one Mobile test, and
+no TV JVM test sources. The loopback fake-server close sequence was also made
+deterministic: it waits for an already connected client action before closing its
+listener, avoiding a spurious `ServerSocket.accept()` failure during idempotent
+close tests.
+
+No emulator was available for a manual visual inspection in this environment.
+The Mobile and TV interaction claims above are therefore covered by compiled
+UI/resource contracts and code review, not by emulator or Fire TV hardware
+validation. No real Hyperion server, FlatBuffer socket, screen capture, or LED
+output was contacted or started for Stage 5. FlatBuffer remains experimental;
+real-server validation and hardware validation remain later-stage work.
+
 ## 7. Minimal transport abstraction
 
 ### Recommendation: compose the existing client through an adapter
@@ -828,8 +883,9 @@ The encoder listener can remain `sendFrame(byte[], width, height)`. Its current
 RGB output is already suitable for both transports. Stage 4 replaced the direct
 Protocol Buffers request construction in `HyperionThread` with
 `activeTransport.setImage(...)`; that is the essential decoupling. Its small
-factory seam makes lifecycle tests possible without sockets. Updating the
-separate TV settings color test remains Stage 5 work.
+factory seam makes lifecycle tests possible without sockets. The existing TV
+diagnostic color test remains explicitly Protocol Buffers-specific; expanding it
+to perform a FlatBuffer server check is outside the completed Stage 5 UI scope.
 
 ## 8. Preference and GUI model
 
@@ -873,30 +929,28 @@ selection. It never changes the transport value or FlatBuffer port. Extending
 discovery later would require a separate, explicitly scoped change for
 `_hyperiond-flatbuf._tcp.`; it is not a prerequisite for manual FlatBuffer use.
 
-### Planned presentation
+### Implemented presentation
 
-Add one small section to both settings experiences only after runtime integration:
+Stage 5 adds one visible experimental control to both settings experiences:
 
 ```text
-Experimental transport
-
 [ ] Use experimental FlatBuffer transport
-
-Experimental. Protocol Buffers remains the stable default.
-Disable this option if FlatBuffer does not work reliably.
+    FlatBuffer is experimental. Protocol Buffers remains the recommended default.
 ```
 
-When checked, show an editable FlatBuffer port and a persistent experimental
-warning. Status and errors include `FlatBuffer`. When unchecked, retain the
-current Protocol Buffers port, connection test, capture, and reconnect behavior;
-no FlatBuffer object is constructed. The settings test action must use only the
-currently selected transport and own priority.
+The control itself is deliberately non-persistent. Its change handler uses the
+existing preference wrapper to write only the stable `protobuf` or `flatbuffer`
+value. Mobile hides the separate FlatBuffer port while disabled; TV keeps it
+visible but disabled and outside D-pad focus. Both preserve the configured port
+and show the manual default `19400` without inferring a transport from either
+port. The warning explains the no-fallback policy and that the change applies to
+the next grabber start.
 
-Changing transport while capture is active must request a controlled capture
-service restart. It must not hot-swap a socket under the encoder, start both
-transports, ask an automatic question, or silently reset the checkbox. TV actions
-must remain D-pad reachable and Mobile must retain its normal AndroidX preference
-flow.
+The status surface uses the transport reported by the service, not the current
+settings value. This prevents a saved next-session choice from being presented as
+a live transport switch. No connection is started, stopped, or restarted by the
+Mobile control. The existing TV settings flow retains its established lifecycle;
+the transport control itself never hot-swaps a transport.
 
 ## 9. Error, fallback, reconnect, and stop behavior
 
@@ -967,8 +1021,8 @@ Use a fake factory and fake transports to prove:
 The suite also proves selected-port-only validation, unchanged factory
 configuration across reconnect, close-before-replacement ordering, discarded
 frames during reconnect, wakeable reconnect delay, late-candidate cleanup, and
-the additive service broadcast contract. UI-driven transport switching and its
-controlled restart remain Stage 5 scope.
+the additive service broadcast contract. Stage 5 separately covers the visible
+settings binding and presentation contract without starting a connection.
 
 ### FlatBuffer fake-server JVM tests
 
@@ -1089,13 +1143,16 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
 
 ### Stage 5 - Experimental settings UI
 
-**Status:** Planned
+**Status:** Completed
 
-- Add the unchecked checkbox, warning, conditional FlatBuffer port, and selected
-  transport status/errors to TV and Mobile settings.
-- Update the TV connection test to use the explicit selection.
-- Require a controlled capture restart after a transport change and validate
-  D-pad behavior.
+- Added a non-persistent experimental checkbox to Mobile and Leanback TV settings
+  that maps only to the stable string transport value.
+- Added a separate FlatBuffer port with default presentation `19400`, validation,
+  Mobile visibility control, and TV enabled/focus control.
+- Added experimental/no-fallback/next-start warning text and service-reported
+  active transport context to Mobile and TV status and error presentation.
+- Added 20 pure JVM binding, status, and resource/source contract tests. No
+  connection is started or switched by a settings change.
 
 ### Stage 6 - Optional real FlatBuffer integration
 
@@ -1140,7 +1197,8 @@ Each stage is independently reviewable and must leave Protocol Buffers usable.
   changes transport selection.
 - Exactly one transport exists per capture session.
 - No failure triggers automatic selection or fallback.
-- Returning to Protocol Buffers is explicit and starts a controlled new session.
+- Returning to Protocol Buffers is explicit and applies to the next grabber
+  session; no running transport is hot-swapped.
 - The existing `Hyperion` implementation and its direct socket tests remain the
   reference for unchanged Protocol Buffers behavior.
 - `targetSdk 26` remains temporary but is outside Phase 3B transport scope.
@@ -1164,9 +1222,6 @@ Each stage is independently reviewable and must leave Protocol Buffers usable.
 5. Should later FlatBuffer discovery reuse the common host or introduce a
    transport-specific discovered host? Phase 3B currently plans one shared host
    and separate ports; discovery extension is out of scope.
-6. Should a saved transport change while capture runs be applied only at the
-   next manual start, or should settings explicitly request an immediate
-   controlled service restart? No live socket swap is allowed.
 
 ## 14. Upstream source references
 
