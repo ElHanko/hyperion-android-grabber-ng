@@ -2,19 +2,25 @@ package com.elhanko.hyperiongrabber.ng.common.network.transport;
 
 /** Stable transport choices and their future preference values. */
 public enum HyperionTransportType {
-    PROTOBUF("protobuf"),
-    FLATBUFFER("flatbuffer");
+    PROTOBUF("protobuf", "Protocol Buffers"),
+    FLATBUFFER("flatbuffer", "FlatBuffer (experimental)");
 
     public static final HyperionTransportType DEFAULT = PROTOBUF;
 
     private final String persistedValue;
+    private final String displayName;
 
-    HyperionTransportType(String persistedValue) {
+    HyperionTransportType(String persistedValue, String displayName) {
         this.persistedValue = persistedValue;
+        this.displayName = displayName;
     }
 
     public String persistedValue() {
         return persistedValue;
+    }
+
+    public String displayName() {
+        return displayName;
     }
 
     /**

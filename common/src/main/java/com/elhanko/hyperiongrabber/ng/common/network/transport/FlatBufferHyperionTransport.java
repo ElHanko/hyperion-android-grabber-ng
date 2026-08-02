@@ -6,7 +6,7 @@ import java.io.IOException;
 
 /** Thin transport adapter around the isolated experimental FlatBuffer client. */
 public final class FlatBufferHyperionTransport implements HyperionTransport {
-    public static final String NAME = "FlatBuffer (experimental)";
+    public static final String NAME = HyperionTransportType.FLATBUFFER.displayName();
 
     private final FlatBufferHyperionClient client;
 

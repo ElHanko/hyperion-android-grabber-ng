@@ -6,7 +6,7 @@ import java.io.IOException;
 
 /** Thin transport adapter around the existing Protocol Buffers client. */
 public final class ProtobufHyperionTransport implements HyperionTransport {
-    public static final String NAME = "Protocol Buffers";
+    public static final String NAME = HyperionTransportType.PROTOBUF.displayName();
 
     private final int priority;
     private final Hyperion client;

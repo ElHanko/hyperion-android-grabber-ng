@@ -5,6 +5,10 @@
     <string name="pref_key_port" translatable="false">pref_key_port</string>
     <integer name="pref_default_port" translatable="false">19445</integer>
 
+    <string name="pref_key_transport" translatable="false">pref_key_transport</string>
+    <string name="pref_key_flatbuffer_port" translatable="false">pref_key_flatbuffer_port</string>
+    <integer name="pref_default_flatbuffer_port" translatable="false">19400</integer>
+
     <string name="pref_key_y_led" translatable="false">pref_key_y_led</string>
     <integer name="pref_default_y_led" translatable="false">34</integer>
 
