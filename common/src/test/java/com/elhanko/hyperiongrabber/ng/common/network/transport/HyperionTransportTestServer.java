@@ -78,11 +78,11 @@ final class HyperionTransportTestServer implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        serverSocket.close();
         executor.shutdown();
         try {
             action.get(4, TimeUnit.SECONDS);
         } catch (TimeoutException failure) {
+            serverSocket.close();
             Socket socket = acceptedSocket;
             if (socket != null) {
                 socket.close();
@@ -98,6 +98,7 @@ final class HyperionTransportTestServer implements AutoCloseable {
             }
             throw new AssertionError(cause);
         } finally {
+            serverSocket.close();
             executor.shutdownNow();
         }
     }

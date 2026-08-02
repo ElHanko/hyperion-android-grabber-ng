@@ -437,7 +437,6 @@ public class HyperionTest {
 
         @Override
         public void close() throws Exception {
-            serverSocket.close();
             executor.shutdown();
             try {
                 action.get(3, TimeUnit.SECONDS);
@@ -451,6 +450,7 @@ public class HyperionTest {
                 }
                 throw new AssertionError(cause);
             } finally {
+                serverSocket.close();
                 executor.shutdownNow();
             }
         }
