@@ -1,9 +1,10 @@
 # Changelog
 
-## [2.1.1] - Unreleased
+## [2.1.1] - 2026-08-02
 
 TV versionCode: `2101`<br>
-Mobile versionCode: `1101`
+Mobile versionCode: `1101`<br>
+Release version: `2.1.1`
 
 ### Changed
 
@@ -40,13 +41,20 @@ Mobile versionCode: `1101`
 - Mobile and TV signed release builds
 - APK application ID, SDK, release-version, and versionCode metadata
 - APK signatures and the expected release certificate fingerprint
-
-### Pending verification
-
-- Update installation on the real Fire TV
-- Continuous screen capture on the real Fire TV
-- Communication with the real Hyperion server
-- Reconnect after a real server or network interruption
+- Signed update installation from TV versionCode `2100` to `2101` using
+  `adb install -r`
+- Installed TV versionCode `2101` with the retained application ID
+  `com.elhanko.hyperiongrabber.ng`
+- Application startup and successful operation on an Amazon Fire TV Stick 4K
+  Max, model AFTKRT, running Fire OS 8.1.8.0 and Android API 30
+- Connection to a real Hyperion NG 2.2.1 server through the ProtoServer
+- Continuous screen capture and LED output on the real Fire TV
+- Reconnect after a real Hyperion server interruption and automatic continuation
+  after the server became available again
+- No unwanted reconnect after intentionally stopping the grabber
+- Opt-in integration test against a real Hyperion NG 2.2.1 ProtoServer:
+  `tests=1`, `skipped=0`, `failures=0`, `errors=0`; short-lived COLOR and small
+  RGB IMAGE requests were processed successfully
 
 ## [2.1.0] - 2026-08-02
 

@@ -13,10 +13,10 @@ under the MIT License.
 
 Version 2.1.0 completed the first modernization phase and received a baseline
 test on Fire OS 8. Version 2.1.1 aligns the Protocol Buffers protocol with
-Hyperion NG 2.2.1 and hardens the TCP transport. Its builds and automated tests
-are successful, but the update installation and end-to-end Hyperion test on the
-target device are still pending. Version 2.1.1 therefore remains `Unreleased`.
-See the [changelog](CHANGELOG.md) for details.
+Hyperion NG 2.2.1 and hardens the TCP transport. Its builds, automated tests,
+signed update installation, continuous screen capture, real-server operation,
+and reconnect behavior were successfully validated on the target Fire TV on
+August 2, 2026. See the [changelog](CHANGELOG.md) for details.
 
 ## Features
 
@@ -43,12 +43,17 @@ See the [changelog](CHANGELOG.md) for details.
 | Fire OS | 8.1.8.0 |
 | Target-device Android API | 30 |
 
-The 2.1.0 phase-1 build received a baseline test on the target Fire TV. For
-2.1.1, schema alignment, TCP framing, error handling, reconnect after an
-emulated connection failure, and APK generation have been verified
-automatically. Successful update installation, continuous capture, real-server
-communication, and reconnect on the physical device will only be documented
-after the pending manual test.
+TV version 2.1.1 was validated on the listed Amazon Fire TV Stick 4K Max. The
+test successfully updated TV versionCode `2100` to `2101` with
+`adb install -r`, retained application ID `com.elhanko.hyperiongrabber.ng`, and
+confirmed application startup. Hyperion NG 2.2.1 communication through the
+current Protocol Buffers transport, continuous screen capture and LED output,
+reconnect after a real server interruption, and automatic continuation after
+the server became available again all worked successfully. Intentionally
+stopping the grabber did not trigger an unwanted reconnect.
+
+The mobile APK was built and covered by the automated validation, but it was
+not hardware-tested as part of this release validation.
 
 The [Hyperion NG 2.2.1 compatibility document](docs/hyperion-ng-2.2.1-compatibility.md)
 describes the exact protocol reference and the corrected schema differences.
@@ -71,7 +76,8 @@ adb install -r dist/mobile/mobile-release.apk
 The `-r` option preserves the installed application and its data during an
 update. Updating from TV `2100/2.1.0` to `2101/2.1.1` also requires the new APK
 to be signed with the same certificate as the installed package. Do not
-uninstall the existing app if its data and update chain must be preserved.
+uninstall the existing app if its data and update chain must be preserved. This
+exact signed update path was successfully validated on the target Fire TV.
 
 ## Configuration
 
@@ -95,10 +101,11 @@ the Hyperion host, port, and capture settings during setup, then use the app to
 start or stop screen capture. Accept the Android system screen-capture prompt
 when it appears.
 
-Fire TV uses the same settings. Because the real 2.1.1 device test is still
-pending, verify the update installation, connection setup, continuous capture,
-reconnect behavior, and cleanup of the Hyperion priority on the physical device
-before treating the release as complete.
+Fire TV uses the same settings. TV version 2.1.1 was successfully exercised on
+the documented AFTKRT device with continuous capture and LED output against a
+real Hyperion NG 2.2.1 server. Reconnect resumed operation after a real server
+interruption, while intentionally stopping the grabber did not cause an
+unwanted reconnect.
 
 ## Docker builds
 
@@ -169,7 +176,10 @@ access. Missing configuration, an unreachable server, or a failed optional
 integration check causes that test to be skipped rather than failing the
 regular build. The test sends only short-lived COLOR and RGB IMAGE requests and
 attempts to clear its own priority in a `finally` block; it never sends
-`CLEARALL`.
+`CLEARALL`. This opt-in test was successfully run against a real Hyperion NG
+2.2.1 ProtoServer with `tests=1`, `skipped=0`, `failures=0`, and `errors=0`;
+both the COLOR request and the small RGB IMAGE request received successful
+replies.
 
 ## Known limitations
 
@@ -181,8 +191,8 @@ attempts to clear its own priority in a `finally` block; it never sends
 - New mDNS/SSDP server discovery is not part of this phase.
 - `targetSdk 26` is intentionally temporary. Changes for newer MediaProjection
   and foreground-service requirements remain separate follow-up work.
-- The real 2.1.1 update, Fire TV, continuous-capture, Hyperion-server, and
-  network-interruption tests are still pending.
+- The mobile APK was built and automatically tested, but was not tested on
+  mobile hardware during this validation.
 
 ## Project history
 
