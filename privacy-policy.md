@@ -1,62 +1,161 @@
-# Hyperion Grabber NG Privacy Policy
+# Privacy Policy
 
-Hyperion Grabber NG is an open-source modernized fork maintained by Mathias (ElHanko). Dave Anderson created the original Hyperion Android Grabber project. This service is provided at no cost and is intended for use as is.
+Effective date: August 2, 2026
 
-This page is used to inform website visitors regarding my policies with the collection, use, and disclosure of Personal Information if anyone decided to use my Service.
+## Overview
 
-If you choose to use my Service, then you agree to the collection and use of information in relation to this policy. The Personal Information that I collect is used for providing and improving the Service. I will not use or share your information with anyone except as described in this Privacy Policy.
+Hyperion Android Grabber NG captures the screen of an Android or Fire OS device,
+processes the captured frames, and sends the resulting image data directly to a
+Hyperion server selected or configured by the device user.
 
-The terms used in this Privacy Policy have the same meanings as in our Terms and Conditions, which is accessible at Hyperion Grabber NG unless otherwise defined in this Privacy Policy.
+The app does not route captured screen content through a server operated by the
+application maintainer. This policy describes the behavior of the current
+open-source app. It does not describe independent processing performed by the
+user's Hyperion server, operating system, device manufacturer, app store, network
+operator, or other installed software.
 
-**Information Collection and Use**
+## Data processed by the app
 
-For a better experience, while using our Service, I may require you to provide us with certain personally identifiable information, including but not limited to We do not collect any data other than the standard crash reporting already being performed by android.. The information that I request is retained on your device and is not collected by me in any way
+### Screen content
 
-The app does use third party services that may collect information used to identify you.
+Screen capture begins only after the user grants Android's MediaProjection
+screen-capture permission. While the grabber is running, captured frames are held
+and processed only as needed to prepare them for network transmission to the
+configured Hyperion server.
 
-Link to privacy policy of third party service providers used by the app
+The app does not intentionally save screenshots or screen recordings as files.
+The application maintainer does not receive, store, or inspect the captured
+screen content through the app.
 
-*   [Google Play Services](https://www.google.com/policies/privacy/)
+The Hyperion server is selected or configured by the device user and is outside
+the maintainer's control. Its operator is responsible for its configuration,
+access protection, network environment, and any processing or storage it may
+perform.
 
-**Log Data**
+### Local settings
 
-I want to inform you that whenever you use my Service, in a case of an error in the app I collect data and information (through third party products) on your phone called Log Data. This Log Data may include information such as your device Internet Protocol (“IP”) address, device name, operating system version, the configuration of the app when utilizing my Service, the time and date of your use of the Service, and other statistics.
+The app stores configuration values locally in Android application preferences.
+These may include:
 
-**Cookies**
+- the Hyperion host name or address;
+- the Protocol Buffers port;
+- the input priority;
+- the capture frame rate;
+- horizontal and vertical capture dimensions or LED counts;
+- reconnect behavior and delay;
+- the average-color option;
+- boot or startup preferences; and
+- other configuration values required to operate the app.
 
-Cookies are files with a small amount of data that are commonly used as anonymous unique identifiers. These are sent to your browser from the websites that you visit and are stored on your device's internal memory.
+The app does not transmit these preferences to the maintainer. They remain on the
+device until the user changes them, clears the app's data through Android
+settings, or uninstalls the app.
 
-This Service does not use these “cookies” explicitly. However, the app may use third party code and libraries that use “cookies” to collect information and improve their services. You have the option to either accept or refuse these cookies and know when a cookie is being sent to your device. If you choose to refuse our cookies, you may not be able to use some portions of this Service.
+### Local network discovery
 
-**Service Providers**
+The app can optionally use Android NSD/mDNS to find compatible Hyperion Protocol
+Buffers services on the local network. During discovery it may process:
 
-I may employ third-party companies and individuals due to the following reasons:
+- the discovered service name;
+- a host name or IP address;
+- the advertised port;
+- the Hyperion identifier from the service's TXT record, if available; and
+- the Hyperion version from the service's TXT record, if available.
 
-*   To facilitate our Service;
-*   To provide the Service on our behalf;
-*   To perform Service-related services; or
-*   To assist us in analyzing how our Service is used.
+Discovery results are used to display available servers. The app does not select
+a server automatically. Only after the user explicitly selects a result does the
+app save that server's resolved host and port in local application preferences.
+Discovery stays within the local network, and the app does not upload discovery
+results to the maintainer. Manual host and port configuration remains available,
+so discovery is optional.
 
-I want to inform users of this Service that these third parties have access to your Personal Information. The reason is to perform the tasks assigned to them on our behalf. However, they are obligated not to disclose or use the information for any other purpose.
+### Technical logs
 
-**Security**
+The app may write technical status and error messages to the Android system log.
+Such messages can include technical connection information. The app does not
+itself upload system logs to the maintainer. Access to and retention of system
+logs are controlled by the operating system and device environment.
 
-I value your trust in providing us your Personal Information, thus we are striving to use commercially acceptable means of protecting it. But remember that no method of transmission over the internet, or method of electronic storage is 100% secure and reliable, and I cannot guarantee its absolute security.
+## Network transmission and security
 
-**Links to Other Sites**
+Captured screen data is transmitted directly from the device to the
+user-selected Hyperion server. The current Hyperion network transport is not
+encrypted by the app, and the app does not provide end-to-end encryption for
+this connection.
 
-This Service may contain links to other sites. If you click on a third-party link, you will be directed to that site. Note that these external sites are not operated by me. Therefore, I strongly advise you to review the Privacy Policy of these websites. I have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party sites or services.
+Users should operate the app and Hyperion server on a trusted local network. If
+traffic must cross an untrusted network, users should provide an appropriate
+secure network layer, such as a trusted VPN or encrypted tunnel.
 
-**Children’s Privacy**
+## Data collection by the maintainer
 
-These Services do not address anyone under the age of 13. I do not knowingly collect personally identifiable information from children under 13. In the case I discover that a child under 13 has provided me with personal information, I immediately delete this from our servers. If you are a parent or guardian and you are aware that your child has provided us with personal information, please contact me so that I will be able to do necessary actions.
+The current app does not include:
 
-**Changes to This Privacy Policy**
+- user accounts;
+- advertising;
+- analytics or behavioral tracking;
+- built-in crash reporting;
+- telemetry sent to the maintainer;
+- cookies;
+- cloud synchronization; or
+- a backend service operated by the developer or maintainer.
 
-I may update our Privacy Policy from time to time. Thus, you are advised to review this page periodically for any changes. I will notify you of any changes by posting the new Privacy Policy on this page. These changes are effective immediately after they are posted on this page.
+The maintainer does not receive screen content, local preferences, discovery
+results, usage statistics, or system logs through the app.
 
-**Contact Us**
+## Third-party libraries and platform services
 
-If you have any questions or suggestions about my Privacy Policy, do not hesitate to contact me.
+The app uses open-source software libraries required for its user interface,
+screen capture, local discovery, and Hyperion communication. These libraries are
+not integrated into the app for advertising, analytics, behavioral tracking, or
+telemetry.
 
-This privacy policy page was created at [privacypolicytemplate.net](https://privacypolicytemplate.net) and modified/generated by [App Privacy Policy Generator](https://app-privacy-policy-generator.firebaseapp.com/)
+The app does not depend on Google Play Services. Android or Fire OS, the device
+manufacturer, an app store, the network operator, or user-installed software may
+independently process technical data under their own privacy policies. Such
+platform or third-party processing is outside the application maintainer's
+control and is not data collection performed by this app.
+
+## Data retention and deletion
+
+Screen data is held only as needed for processing and transmission and is not
+intentionally retained by the app as screenshot or recording files. Local
+configuration remains in Android application preferences until it is changed,
+the app's data is cleared, or the app is uninstalled.
+
+Depending on device and operating-system settings, Android or Fire OS may
+independently back up or restore local application data as a platform function.
+
+The app does not control retention performed independently by a user-configured
+Hyperion server, the operating system, or other software.
+
+## User control
+
+The user controls whether Android screen-capture permission is granted. Stopping
+the grabber ends the active screen capture and transmission. Server settings can
+be changed manually, and local app data can be removed through Android
+application settings or by uninstalling the app.
+
+The app does not create or maintain user accounts.
+
+## Children's privacy
+
+The app is not specifically directed at children. The maintainer does not
+knowingly collect personal data through the app. Captured screen content is sent
+only to the Hyperion server configured or selected by the device user.
+
+## Changes to this policy
+
+This policy may be updated when the app's behavior changes or when clarification
+is needed. Changes are published in this repository with an updated effective
+date when appropriate.
+
+## Contact
+
+Questions about this policy can be raised through the
+[Hyperion Android Grabber NG repository](https://github.com/ElHanko/hyperion-android-grabber-ng)
+or the maintainer's available contact options on the
+[ElHanko GitHub profile](https://github.com/ElHanko).
+
+Do not include sensitive, confidential, or private information in a public GitHub
+issue.
