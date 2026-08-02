@@ -163,6 +163,15 @@ sollten außerdem die Angaben in der
 [Kompatibilitätsdokumentation](docs/hyperion-ng-2.2.1-compatibility.md) beachtet
 werden.
 
+Ein zusätzlicher Test gegen einen echten Hyperion-Server ist strikt opt-in und
+benötigt `HYPERION_INTEGRATION_TESTS=1` sowie `HYPERION_TEST_HOST`,
+`HYPERION_TEST_PORT` und `HYPERION_TEST_PRIORITY=199`. Ohne dieses Flag findet
+kein Netzwerkzugriff statt. Ein fehlender oder nicht erreichbarer Testserver
+führt nur zum Überspringen des optionalen Tests und nicht zu einem Buildfehler.
+Der Test sendet ausschließlich kurzzeitige COLOR- und RGB-IMAGE-Requests und
+löscht anschließend im `finally`-Block seine eigene Priorität; `CLEARALL` wird
+nicht verwendet.
+
 ## Bekannte Einschränkungen
 
 - ProtoBuffer wird derzeit verwendet und von Hyperion NG 2.2.1 noch

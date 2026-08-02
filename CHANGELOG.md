@@ -33,6 +33,9 @@ Erstes Kompatibilitätsupdate der zweiten Modernisierungsphase:
 - 23 JVM-Transporttests mit lokalem `ServerSocket` prüfen Requests, Framing,
   RGB/RGBA, fragmentierte Antworten, Fehlerfälle, mehrere Requests auf einer
   Verbindung und einen neuen Verbindungsaufbau nach einem Abbruch.
+- Ein standardmäßig deaktivierter Integrationstest kann über Umgebungsvariablen
+  einen echten Server mit kurzzeitigen COLOR-/RGB-IMAGE-Requests prüfen und
+  räumt ausschließlich seine Testpriorität wieder auf.
 - Debug- und signierte Release-APKs für Mobile und TV wurden reproduzierbar im
   Docker-Builder erstellt.
 - Schema- und Transportkompatibilität wurden gegen die offiziellen
