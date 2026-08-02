@@ -1,5 +1,49 @@
 # Changelog
 
+## [2.2.0] - Unreleased
+
+### Added
+
+- Added optional Android NSD discovery for the Hyperion Protocol Buffers service
+  type `_hyperiond-protobuf._tcp.` in both TV and mobile setup flows.
+- Added explicit Start, Cancel, Retry, result selection, and manual-setup paths.
+- Added a shared immutable discovery model, strict UTF-8 handling for Hyperion
+  `id` and `version` TXT records, ID/endpoint deduplication, IPv4 preference with
+  IPv6 retention, and atomic host/port adoption.
+- Added offline JVM tests for discovery validation, grouping, address handling,
+  serialized resolution, service loss, generation isolation, repeated lifecycle
+  operations, and explicit preference selection.
+
+### Changed
+
+- Discovery now uses the actual resolved DNS-SD SRV port instead of assuming the
+  manual default port `19445`.
+- TV onboarding and settings now show the shared multiple-result discovery flow;
+  mobile settings provide the same optional discovery entry point.
+- Added a short-lived, non-reference-counted multicast lock for visible discovery
+  sessions, including release handling for success, failure, cancellation, and
+  owner destruction.
+
+### Removed
+
+- Removed the legacy `/24` subnet scanner, sequential fixed-port TCP probing,
+  deprecated scanner task, and single-result activity.
+
+### Verified
+
+- Platform-independent discovery tests pass without a LAN or Android device.
+- Android NSD discovery on an Amazon Fire TV Stick 4K Max, model AFTKRT,
+  running Fire OS 8.1.8.0 and Android API 30.
+- Discovery of a real Hyperion NG 2.2.1 ProtoServer through
+  `_hyperiond-protobuf._tcp.` and resolution of its SRV port `19445`.
+- Explicit server selection and transfer of the discovered host and port into
+  the existing configuration, while retaining manual configuration.
+- Successful connection through the existing Protocol Buffers transport,
+  followed by screen capture and LED output.
+- Retry, cancellation, leaving the discovery view without a stale active
+  search, and D-pad operation during the tested Fire TV flow.
+- No crash or fatal exception was observed during the tested discovery flow.
+
 ## [2.1.1] - 2026-08-02
 
 TV versionCode: `2101`<br>

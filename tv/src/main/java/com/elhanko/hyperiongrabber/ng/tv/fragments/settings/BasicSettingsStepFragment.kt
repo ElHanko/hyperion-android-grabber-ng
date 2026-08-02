@@ -2,6 +2,7 @@ package com.elhanko.hyperiongrabber.ng.tv.fragments.settings
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.AsyncTask
 import android.os.Bundle
@@ -11,6 +12,7 @@ import android.widget.Toast
 import com.elhanko.hyperiongrabber.ng.common.R as CommonR
 import com.elhanko.hyperiongrabber.ng.common.network.Hyperion
 import com.elhanko.hyperiongrabber.ng.tv.R
+import com.elhanko.hyperiongrabber.ng.tv.activities.NetworkScanActivity
 import java.lang.ref.WeakReference
 import java.net.UnknownHostException
 
@@ -162,6 +164,11 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
     override fun onCreateButtonActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         actions.add(continueAction())
         actions.add(GuidedAction.Builder(context)
+                .id(ACTION_DISCOVER)
+                .title(getString(CommonR.string.discovery_title))
+                .description(CommonR.string.pref_summary_discover_server)
+                .build())
+        actions.add(GuidedAction.Builder(context)
                 .id(ACTION_TEST)
                 .title(getString(R.string.guidedstep_test))
                 .description(R.string.guidedstep_test_description)
@@ -205,6 +212,11 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
 
             return
 
+        } else if (action.id == ACTION_DISCOVER) {
+            startActivityForResult(
+                    Intent(requireContext(), NetworkScanActivity::class.java),
+                    REQUEST_DISCOVERY)
+            return
         } else if (action.id == ACTION_TEST){
             val colorIdx = testCounter % TEST_COLORS.size
             val color = TEST_COLORS[colorIdx]
@@ -223,6 +235,18 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
         }
 
         super.onGuidedActionClicked(action)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_DISCOVERY && resultCode == Activity.RESULT_OK) {
+            findActionById(ACTION_HOST_NAME)?.description =
+                    prefs.getString(CommonR.string.pref_key_host, null)
+            findActionById(ACTION_PORT)?.description =
+                    prefs.getInt(CommonR.string.pref_key_port).toString()
+            notifyActionIdChanged(ACTION_HOST_NAME)
+            notifyActionIdChanged(ACTION_PORT)
+        }
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
@@ -271,6 +295,8 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
 
 
         private const val ACTION_TEST = 700L
+        private const val ACTION_DISCOVER = 710L
+        private const val REQUEST_DISCOVERY = 1710
 
         private val TEST_COLORS = intArrayOf(Color.RED, Color.GREEN, Color.BLUE, Color.WHITE)
 

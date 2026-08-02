@@ -6,6 +6,11 @@
     <PreferenceCategory
         android:title="@string/pref_group_connection">
 
+        <Preference
+            android:key="@string/pref_key_discover_server"
+            android:summary="@string/pref_summary_discover_server"
+            android:title="@string/pref_title_discover_server" />
+
         <EditTextPreference
             android:inputType="textCapWords"
             android:key="@string/pref_key_host"

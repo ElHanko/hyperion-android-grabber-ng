@@ -13,16 +13,6 @@
   <string name="disabled">Discapacitado</string>
   <!-- notification button -->
   <string name="notification_exit_button">Salida</string>
-  <!-- Network scanner -->
-  <string name="scanner_title">¡Hola!</string>
-  <string name="scanner_start_scan_button">Iniciar escaneoe</string>
-  <string name="scanner_scan_in_progress_button">Exploración…</string>
-  <string name="scanner_no_results">No se encontraron resultados %s</string>
-  <string name="scanner_retry_button">reintento</string>
-  <!-- Network Scanner result -->
-  <string name="scan_result_title">Y el ganador es…</string>
-  <string name="scan_result_confirm_button_text">Me encanta!</string>
-  <string name="scan_result_alternative_color_button_text">Odio a púrpura</string>
   <!-- Connection settings -->
   <string name="pref_group_connection">Conexión</string>
   <string name="pref_title_host">Host de Hyperion</string>

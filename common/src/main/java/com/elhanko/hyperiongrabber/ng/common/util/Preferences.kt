@@ -4,11 +4,13 @@ import android.content.Context
 import android.content.res.Resources
 import androidx.annotation.StringRes
 import androidx.preference.PreferenceManager
+import com.elhanko.hyperiongrabber.ng.common.R
+import com.elhanko.hyperiongrabber.ng.common.discovery.HostPortStore
 
 /** Wrapper around SharedPreferences which allows for default values defined in Resources
  * Main purpose is that defaults are defined in a centralized location and that preferences are
  * accessed through a unified interface */
-class Preferences(context: Context) {
+class Preferences(context: Context) : HostPortStore {
 
     private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
     private val resources = context.resources
@@ -47,6 +49,15 @@ class Preferences(context: Context) {
 
     fun putInt(@StringRes keyResourceId: Int, value: Int){
         putString(keyResourceId, value.toString())
+    }
+
+    override fun putHostAndPort(host: String, port: Int) {
+        require(host.isNotBlank()) { "Hyperion host must not be blank" }
+        require(port in 1..65535) { "Hyperion port must be in range 1..65535" }
+        preferences.edit()
+            .putString(key(R.string.pref_key_host), host)
+            .putString(key(R.string.pref_key_port), port.toString())
+            .apply()
     }
 
     fun getBoolean(@StringRes keyResourceId: Int): Boolean {

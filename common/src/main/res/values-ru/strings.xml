@@ -11,7 +11,6 @@
   <string name="enabled">Включено</string>
   <!-- notification button -->
   <string name="notification_exit_button">Выход </string>
-  <string name="scanner_scan_in_progress_button">сканирование...</string>
   <string name="pref_title_priority">Приоритет сообщений</string>
   <string name="pref_title_reconnect">Заново</string>
   <string name="pref_summary_reconnect">Автоматическо заново соедините к hyperion припотеряли связи</string>

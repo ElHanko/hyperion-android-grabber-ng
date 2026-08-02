@@ -13,20 +13,6 @@
   <string name="disabled">Uitgeschakeld</string>
   <!-- notification button -->
   <string name="notification_exit_button">Afsluiten</string>
-  <!-- Network scanner -->
-  <string name="scanner_title">Hallo daar!</string>
-  <string name="scanner_description">Hyperion Grabber NG kan uw netwerk scannen op draaiende servers, zodat u niet hoeft te knoeien met uw afstandsbediening om een ​​ip-adres in te voeren.</string>
-  <string name="scanner_start_scan_button">Scan starten</string>
-  <string name="scanner_scan_in_progress_text">Uw lokale netwerk scannen op Hyperion servers %s</string>
-  <string name="scanner_scan_in_progress_button">Scannen...</string>
-  <string name="scanner_no_results">Geen resultaten gevonden %s</string>
-  <string name="scanner_retry_button">opnieuw proberen</string>
-  <string name="scanner_manual_setup_button">Handmatig instellen</string>
-  <!-- Network Scanner result -->
-  <string name="scan_result_title">En de winnaar is…</string>
-  <string name="scan_result_description">Om dit te vieren, hebben we al je LED\'s paars gemaakt %s </string>
-  <string name="scan_result_confirm_button_text">Mooi hoor!</string>
-  <string name="scan_result_alternative_color_button_text">Ik haat paars</string>
   <!-- Connection settings -->
   <string name="pref_group_connection">Verbinding</string>
   <string name="pref_title_host">Hyperion Hostnaam</string>

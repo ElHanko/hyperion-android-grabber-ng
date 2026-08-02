@@ -13,20 +13,6 @@
   <string name="disabled">تعطيل</string>
   <!-- notification button -->
   <string name="notification_exit_button">خروج</string>
-  <!-- Network scanner -->
-  <string name="scanner_title">مرحبا!</string>
-  <string name="scanner_description">Hyperion Grabber NG يمكنه بحث الشبكة الخاصة بك لتشغيل خوادم, حتى أنك لن تضطر إلى عزف مع جهاز التحكم عن بعد لكمة في عنوان ip.</string>
-  <string name="scanner_start_scan_button">بدء البحث</string>
-  <string name="scanner_scan_in_progress_text">البحث عن شبكة المحلية الخاصة بك لتشغيل هايبريون خوادم %s</string>
-  <string name="scanner_scan_in_progress_button">يتم البحث</string>
-  <string name="scanner_no_results">لم يتم العثور على نتائج %s</string>
-  <string name="scanner_retry_button">إعادة المحاولة</string>
-  <string name="scanner_manual_setup_button">الإعداد اليدوي</string>
-  <!-- Network Scanner result -->
-  <string name="scan_result_title">و الفائز هو…</string>
-  <string name="scan_result_description">للاحتفال ، قمنا بتحويل جميع المصابيح الخاصة بك إلى اللون الأرجواني %s</string>
-  <string name="scan_result_confirm_button_text">أحبها!</string>
-  <string name="scan_result_alternative_color_button_text">أنا أكره الارجوان</string>
   <!-- Connection settings -->
   <string name="pref_group_connection">الاتصال</string>
   <string name="pref_title_host">هايبريون المضيف</string>

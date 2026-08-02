@@ -82,6 +82,7 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
     private void startSetup() {
         // Start onboarding (setup)
         Intent intent = new Intent(this, NetworkScanActivity.class);
+        intent.putExtra(NetworkScanActivity.EXTRA_INITIAL_SETUP, true);
         startActivityForResult(intent, REQUEST_INITIAL_SETUP);
     }
 

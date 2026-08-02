@@ -13,20 +13,6 @@
   <string name="disabled">Zakázáno</string>
   <!-- notification button -->
   <string name="notification_exit_button">Ukončit</string>
-  <!-- Network scanner -->
-  <string name="scanner_title">Ahoj!</string>
-  <string name="scanner_description">Hyperion Grabber NG může vyhledat spuštěné Hyperion servery ve vaší lokální síti, abyste nemuseli zadávat IP adresu vaším dálkovým ovladačem.</string>
-  <string name="scanner_start_scan_button">Spustit hledání</string>
-  <string name="scanner_scan_in_progress_text">Hledání spuštěných Hyperion serverů ve vaší lokální síti %s</string>
-  <string name="scanner_scan_in_progress_button">Hledání...</string>
-  <string name="scanner_no_results">Nebyly nalezeny žádné výsledky %s</string>
-  <string name="scanner_retry_button">opakovat</string>
-  <string name="scanner_manual_setup_button">Ruční nastavení</string>
-  <!-- Network Scanner result -->
-  <string name="scan_result_title">A vítězem se stává...</string>
-  <string name="scan_result_description">Abychom to oslavili, nastavili jsme všechny LED na fialovou %s</string>
-  <string name="scan_result_confirm_button_text">Miluju to!</string>
-  <string name="scan_result_alternative_color_button_text">Nesnáším fialovou</string>
   <!-- Connection settings -->
   <string name="pref_group_connection">Připojení</string>
   <string name="pref_title_host">Hyperion Host</string>
