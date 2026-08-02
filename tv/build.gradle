@@ -11,8 +11,8 @@ android {
         applicationId = 'com.elhanko.hyperiongrabber.ng'
         minSdk = 21
         targetSdk = 26
-        versionCode = 2100
-        versionName = '2.1.0'
+        versionCode = 2101
+        versionName = '2.1.1'
     }
 
     buildTypes {
