@@ -13,20 +13,6 @@
   <string name="disabled">Disabilitato</string>
   <!-- notification button -->
   <string name="notification_exit_button">Uscita</string>
-  <!-- Network scanner -->
-  <string name="scanner_title">Ciao!</string>
-  <string name="scanner_description">Hyperion Grabber NG è in grado di scansionare la tua rete per individuare server in esecuzione, quindi non dovrai inserire un indirizzo IP con il telecomando.</string>
-  <string name="scanner_start_scan_button">Inizia scansione</string>
-  <string name="scanner_scan_in_progress_text">Scansione rete locale per individuare server hyperion in esecuzione %s</string>
-  <string name="scanner_scan_in_progress_button">Scansione ...</string>
-  <string name="scanner_no_results">Nessun risultato trovato %s</string>
-  <string name="scanner_retry_button">Riprova</string>
-  <string name="scanner_manual_setup_button">Configurazione manuale</string>
-  <!-- Network Scanner result -->
-  <string name="scan_result_title">E il vincitore è…</string>
-  <string name="scan_result_description">Per festeggiare, abbiamo acceso tutti i tuoi LED in viola %s</string>
-  <string name="scan_result_confirm_button_text">Lo adoro!</string>
-  <string name="scan_result_alternative_color_button_text">Odio il viola</string>
   <!-- Connection settings -->
   <string name="pref_group_connection">Connessione</string>
   <string name="pref_title_host">Hyperion Host</string>

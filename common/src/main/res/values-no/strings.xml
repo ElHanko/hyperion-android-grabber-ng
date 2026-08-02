@@ -13,20 +13,6 @@
   <string name="disabled">Deaktivert</string>
   <!-- notification button -->
   <string name="notification_exit_button">Avslutt</string>
-  <!-- Network scanner -->
-  <string name="scanner_title">Hei der!</string>
-  <string name="scanner_description">Hyperion Grabber NG kan skanne nettverket etter aktive Hyperion servere, slik at du slipper å fikle med fjernkontrollen for å taste inn en ip-adresse.</string>
-  <string name="scanner_start_scan_button">Start søk</string>
-  <string name="scanner_scan_in_progress_text">Skanner ditt lokale nettverk for aktive Hyperion servere %s</string>
-  <string name="scanner_scan_in_progress_button">Skanner ...</string>
-  <string name="scanner_no_results">Ingen resultater funnet %s</string>
-  <string name="scanner_retry_button">prøv på nytt</string>
-  <string name="scanner_manual_setup_button">Manuelt oppsett</string>
-  <!-- Network Scanner result -->
-  <string name="scan_result_title">Og vinneren er...</string>
-  <string name="scan_result_description">For å feire, har vi gjort alle lysdiodene dine lilla %s</string>
-  <string name="scan_result_confirm_button_text">Digger det!</string>
-  <string name="scan_result_alternative_color_button_text">Jeg hater lilla</string>
   <!-- Connection settings -->
   <string name="pref_group_connection">Tilkobling</string>
   <string name="pref_title_host">Hyperion vert</string>

@@ -13,15 +13,6 @@
   <string name="disabled">Disabled</string>
   <!-- notification button -->
   <string name="notification_exit_button">Exit</string>
-  <!-- Network scanner -->
-  <string name="scanner_title">Hi there!</string>
-  <string name="scanner_description">Hyperion Grabber NG can scan your network for running servers, so you won\'t have to fiddle with your remote to punch in an ip-address.</string>
-  <string name="scanner_start_scan_button">Start scan</string>
-  <string name="scanner_scan_in_progress_text">Scanning your local network for running hyperion servers %s</string>
-  <string name="scanner_scan_in_progress_button">Scanning…</string>
-  <string name="scanner_no_results">No results found %s</string>
-  <string name="scanner_retry_button">retry</string>
-  <string name="scanner_manual_setup_button">Manual setup</string>
   <!-- Hyperion ProtoServer discovery -->
   <string name="discovery_title">Find Hyperion servers</string>
   <string name="discovery_description">Search the local network for Hyperion Protocol Buffers servers. You can always configure the connection manually.</string>
@@ -39,11 +30,6 @@
   <string name="discovery_server_details_with_version">Protocol Buffers — %1$s:%2$d — Hyperion %3$s</string>
   <string name="pref_title_discover_server">Find Hyperion servers</string>
   <string name="pref_summary_discover_server">Search automatically for a Hyperion ProtoServer</string>
-  <!-- Network Scanner result -->
-  <string name="scan_result_title">And the winner is…</string>
-  <string name="scan_result_description">To celebrate, we have turned all your LEDs purple %s</string>
-  <string name="scan_result_confirm_button_text">Love it!</string>
-  <string name="scan_result_alternative_color_button_text">I hate purple</string>
   <!-- Connection settings -->
   <string name="pref_group_connection">Connection</string>
   <string name="pref_title_host">Hyperion Host</string>

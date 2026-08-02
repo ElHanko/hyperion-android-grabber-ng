@@ -13,20 +13,6 @@
   <string name="disabled">Ausschalten</string>
   <!-- notification button -->
   <string name="notification_exit_button">Beenden</string>
-  <!-- Network scanner -->
-  <string name="scanner_title">Hallo!</string>
-  <string name="scanner_description">Hyperion Grabber NG kann im Netzwerk nach Servern suchen, so dass Du nicht die IP-Adresse deines Servers manuell eingeben musst.</string>
-  <string name="scanner_start_scan_button">Suche starten</string>
-  <string name="scanner_scan_in_progress_text">Suche nach lokalen Hyperion Servers läuft %s</string>
-  <string name="scanner_scan_in_progress_button">Suche…</string>
-  <string name="scanner_no_results">Kein Server gefunden %s</string>
-  <string name="scanner_retry_button">Wiederholen</string>
-  <string name="scanner_manual_setup_button">Manuelle Einstellung</string>
-  <!-- Network Scanner result -->
-  <string name="scan_result_title">Und der Gewinner ist …</string>
-  <string name="scan_result_description">Jetzt müssten alle deine LEDs Lila aufleuchten %s</string>
-  <string name="scan_result_confirm_button_text">Ich liebe es!</string>
-  <string name="scan_result_alternative_color_button_text">Bitte kein Lila</string>
   <!-- Connection settings -->
   <string name="pref_group_connection">Verbindung</string>
   <string name="pref_title_host">IP Adresse</string>
