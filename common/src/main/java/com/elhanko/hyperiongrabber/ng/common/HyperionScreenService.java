@@ -20,6 +20,8 @@ import android.util.Log;
 import android.view.WindowManager;
 
 import com.elhanko.hyperiongrabber.ng.common.network.HyperionThread;
+import com.elhanko.hyperiongrabber.ng.common.network.transport.HyperionConnectionSelection;
+import com.elhanko.hyperiongrabber.ng.common.network.transport.HyperionTransportType;
 import com.elhanko.hyperiongrabber.ng.common.util.HyperionGrabberOptions;
 import com.elhanko.hyperiongrabber.ng.common.util.Preferences;
 
@@ -29,6 +31,7 @@ public class HyperionScreenService extends Service {
     public static final String BROADCAST_ERROR = "SERVICE_ERROR";
     public static final String BROADCAST_TAG = "SERVICE_STATUS";
     public static final String BROADCAST_FILTER = "SERVICE_FILTER";
+    public static final String BROADCAST_TRANSPORT = "SERVICE_TRANSPORT";
     private static final boolean DEBUG = false;
     private static final String TAG = "HyperionScreenService";
 
@@ -53,29 +56,34 @@ public class HyperionScreenService extends Service {
     private HyperionScreenEncoder mHyperionEncoder;
     private NotificationManager mNotificationManager;
     private String mStartError = null;
+    private String mTransportName = HyperionTransportType.DEFAULT.displayName();
 
     HyperionThreadBroadcaster mReceiver = new HyperionThreadBroadcaster() {
         @Override
-        public void onConnected() {
-            Log.d(TAG, "CONNECTED TO HYPERION INSTANCE");
+        public void onConnected(String transportName) {
+            mTransportName = transportName;
+            Log.d(TAG, "CONNECTED TO HYPERION INSTANCE USING " + transportName);
             hasConnected = true;
             notifyActivity();
         }
 
         @Override
-        public void onConnectionError(int errorID, String error) {
-            Log.e(TAG, "COULD NOT CONNECT TO HYPERION INSTANCE");
-            if (error != null) Log.e(TAG, error);
+        public void onConnectionError(String transportName, java.io.IOException error) {
+            mTransportName = transportName;
+            Log.e(TAG, "COULD NOT CONNECT TO HYPERION INSTANCE USING " + transportName);
+            if (error != null) Log.e(TAG, error.getMessage(), error);
             if (!hasConnected) {
                 mStartError = getResources().getString(R.string.error_server_unreachable);
                 haltStartup();
             }
             if (RECONNECT && hasConnected) {
-                Log.e(TAG, "AUTOMATIC RECONNECT ENABLED. CONNECTING ...");
+                Log.e(TAG, "AUTOMATIC RECONNECT ENABLED FOR " + transportName
+                        + ". CONNECTING ...");
             } else if (!RECONNECT && hasConnected) {
                 mStartError = getResources().getString(R.string.error_connection_lost);
                 stopSelf();
             }
+            notifyActivity();
         }
 
         @Override
@@ -130,32 +138,64 @@ public class HyperionScreenService extends Service {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private boolean prepared() {
         Preferences prefs = new Preferences(getBaseContext());
-        String host = prefs.getString(R.string.pref_key_host, null);
-        int port = prefs.getInt(R.string.pref_key_port, -1);
-        String priority = prefs.getString(R.string.pref_key_priority, "50");
-        mFrameRate = prefs.getInt(R.string.pref_key_framerate);
-        mHorizontalLEDCount = prefs.getInt(R.string.pref_key_x_led);
-        mVerticalLEDCount = prefs.getInt(R.string.pref_key_y_led);
-        mSendAverageColor = prefs.getBoolean(R.string.pref_key_use_avg_color);
-        RECONNECT = prefs.getBoolean(R.string.pref_key_reconnect);
-        int delay = prefs.getInt(R.string.pref_key_reconnect_delay);
-        if (host == null || Objects.equals(host, "0.0.0.0") || Objects.equals(host, "")) {
-            mStartError = getResources().getString(R.string.error_empty_host);
+        try {
+            String persistedTransport = prefs.getString(R.string.pref_key_transport, null);
+            HyperionTransportType transportType =
+                    HyperionTransportType.fromPersistedValue(persistedTransport);
+            mTransportName = transportType.displayName();
+
+            String protobufPort = null;
+            String flatBufferPort = null;
+            if (transportType == HyperionTransportType.FLATBUFFER) {
+                flatBufferPort = prefs.getString(
+                        R.string.pref_key_flatbuffer_port,
+                        Integer.toString(getResources().getInteger(
+                                R.integer.pref_default_flatbuffer_port)));
+            } else {
+                protobufPort = prefs.getString(R.string.pref_key_port, null);
+            }
+
+            String host = prefs.getString(R.string.pref_key_host, null);
+            String priority = prefs.getString(
+                    R.string.pref_key_priority,
+                    Integer.toString(getResources().getInteger(R.integer.pref_default_priority)));
+            HyperionConnectionSelection selection = HyperionConnectionSelection.resolve(
+                    persistedTransport,
+                    host,
+                    protobufPort,
+                    flatBufferPort,
+                    priority,
+                    1_000,
+                    2_000);
+
+            mFrameRate = prefs.getInt(R.string.pref_key_framerate);
+            mHorizontalLEDCount = prefs.getInt(R.string.pref_key_x_led);
+            mVerticalLEDCount = prefs.getInt(R.string.pref_key_y_led);
+            mSendAverageColor = prefs.getBoolean(R.string.pref_key_use_avg_color);
+            RECONNECT = prefs.getBoolean(R.string.pref_key_reconnect);
+            int delay = prefs.getInt(R.string.pref_key_reconnect_delay);
+            if (mHorizontalLEDCount <= 0 || mVerticalLEDCount <= 0) {
+                mStartError = getResources().getString(R.string.error_invalid_led_counts);
+                return false;
+            }
+
+            mMediaProjectionManager = (MediaProjectionManager) getSystemService(
+                    Context.MEDIA_PROJECTION_SERVICE);
+            mHyperionThread = new HyperionThread(
+                    mReceiver,
+                    selection.transportType(),
+                    selection.transportConfig(),
+                    RECONNECT,
+                    delay);
+            mHyperionThread.start();
+            mStartError = null;
+            return true;
+        } catch (RuntimeException invalidConfiguration) {
+            Log.e(TAG, "INVALID " + mTransportName + " STARTUP CONFIGURATION",
+                    invalidConfiguration);
+            mStartError = getResources().getString(R.string.error_server_unreachable);
             return false;
         }
-        if (port == -1) {
-            mStartError = getResources().getString(R.string.error_empty_port);
-            return false;
-        }
-        if (mHorizontalLEDCount <= 0 || mVerticalLEDCount <= 0) {
-            mStartError = getResources().getString(R.string.error_invalid_led_counts);
-            return false;
-        }
-        mMediaProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        mHyperionThread = new HyperionThread(mReceiver, host, port, Integer.parseInt(priority), RECONNECT, delay);
-        mHyperionThread.start();
-        mStartError = null;
-        return true;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -271,15 +311,17 @@ public class HyperionScreenService extends Service {
     private void stopScreenRecord() {
         if (DEBUG) Log.v(TAG, "Stop screen recorder");
         RECONNECT = false;
+        if (mHyperionThread != null) {
+            mHyperionThread.preventReconnect();
+        }
         mNotificationManager.cancel(NOTIFICATION_ID);
         if (mHyperionEncoder != null) {
             if (DEBUG) Log.v(TAG, "Stopping the current encoder");
             mHyperionEncoder.stopRecording();
+        } else if (mHyperionThread != null) {
+            mHyperionThread.shutdown();
         }
         releaseResource();
-        if (mHyperionThread != null) {
-            mHyperionThread.interrupt();
-        }
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -302,6 +344,7 @@ public class HyperionScreenService extends Service {
         Intent intent = new Intent(BROADCAST_FILTER);
         intent.putExtra(BROADCAST_TAG, isCommunicating());
         intent.putExtra(BROADCAST_ERROR, mStartError);
+        intent.putExtra(BROADCAST_TRANSPORT, mTransportName);
         if (DEBUG) {
             Log.v(TAG, "Sending status broadcast - communicating: " +
                     String.valueOf(isCommunicating()));
@@ -314,8 +357,8 @@ public class HyperionScreenService extends Service {
 
     public interface HyperionThreadBroadcaster {
 //        void onResponse(String response);
-        void onConnected();
-        void onConnectionError(int errorHash, String errorString);
+        void onConnected(String transportName);
+        void onConnectionError(String transportName, java.io.IOException error);
         void onReceiveStatus(boolean isCapturing);
     }
 }
