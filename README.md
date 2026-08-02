@@ -1,15 +1,15 @@
-# Hyperion Grabber NG
+# Hyperion Android Grabber NG
 
-Hyperion Grabber NG captures the screen of an Android device and sends it to a
-Hyperion server. The project provides separate applications for Android mobile
-devices and Android TV or Fire TV.
+Hyperion Android Grabber NG captures the screen of an Android device and sends
+it to a Hyperion server. The project provides separate applications for Android
+mobile devices and Android TV or Fire TV.
 
 ## Project status and fork history
 
 This project is a modernized fork of the original **Hyperion Android Grabber**
 created by Dave Anderson. Mathias (ElHanko) maintains the fork as Hyperion
-Grabber NG. Both the original work and the changes in this fork are available
-under the MIT License.
+Android Grabber NG. Both the original work and the changes in this fork are
+available under the MIT License.
 
 Version 2.1.0 completed the first modernization phase and received a baseline
 test on Fire OS 8. Version 2.1.1 aligns the Protocol Buffers protocol with
@@ -20,6 +20,16 @@ August 2, 2026. The unreleased 2.2.0 development line adds optional Android NSD
 discovery for Hyperion ProtoServers. Its discovery flow is automatically tested,
 but has not yet completed the separate Fire TV hardware validation. See the
 [changelog](CHANGELOG.md) for details.
+
+## Project roadmap
+
+**NG** stands for **Next Generation**. The project preserves the original,
+focused purpose of capturing an Android screen and transmitting its image data
+to Hyperion while obsolete surrounding components are replaced with a modern,
+consistent, and maintainable technical structure.
+
+Completed modernization phases and planned future work are documented in the
+[project roadmap](docs/roadmap.md).
 
 ## Features
 
@@ -36,7 +46,7 @@ but has not yet completed the separate Fire TV hardware validation. See the
 
 | Property | Value |
 | --- | --- |
-| Project | Hyperion Grabber NG |
+| Project | Hyperion Android Grabber NG |
 | Application ID | `com.elhanko.hyperiongrabber.ng` |
 | Hyperion reference | Hyperion NG 2.2.1 |
 | Protocol | Protocol Buffers through the Hyperion ProtoServer |
@@ -226,9 +236,9 @@ replies.
 ## Project history
 
 Dave Anderson developed the original Hyperion Android Grabber. Mathias
-(ElHanko) continues it as Hyperion Grabber NG. The first modernization phase
-updated the project identity, Java packages, AndroidX stack, View Binding, and
-reproducible build and signing environment. The second phase delivered the
+(ElHanko) continues it as Hyperion Android Grabber NG. The first modernization
+phase updated the project identity, Java packages, AndroidX stack, View Binding,
+and reproducible build and signing environment. The second phase delivered the
 documented Hyperion NG 2.2.1 Protocol Buffers compatibility update and hardened
 TCP transport. The third phase adds optional Android NSD discovery without
 changing the production Protocol Buffers transport or removing manual
