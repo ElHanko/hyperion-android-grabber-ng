@@ -1,4 +1,4 @@
-# Hyperion NG 2.2.1 ProtoBuffer compatibility
+# Hyperion NG 2.2.1 Protocol Buffers compatibility
 
 ## Reference baseline
 
@@ -30,9 +30,9 @@ fields:
 | `CLEARALL` | 4 | no extension |
 
 Color, image, and clear requests retain their tagged upstream field numbers.
-The ProtoServer accepts priorities from 100 through 199 for color and image
-input. The Android client applies that ProtoBuffer priority range consistently
-to every operation carrying a priority, including `CLEAR`.
+The Hyperion ProtoServer accepts priorities from 100 through 199 for color and
+image input. The Android client applies that range consistently to every
+operation carrying a priority, including `CLEAR`.
 
 An image has positive width and height and contains exactly either three bytes
 per pixel (RGB) or four bytes per pixel (RGBA). For RGBA input, Hyperion uses
@@ -81,12 +81,13 @@ fresh transport after a failed connection.
 
 ## Remaining scope and migration note
 
-Hyperion NG 2.2.1 still includes and supports the ProtoBuffer server. Its
+Hyperion NG 2.2.1 still includes and supports the ProtoServer. Its
 `ProtoClientConnection.cpp` source contains a TODO to remove that class after
 third-party applications have migrated; this is a future intent, not evidence
-that ProtoBuffer is removed or unusable in 2.2.1.
+that Protocol Buffers support is removed or unusable in 2.2.1.
 
-This update deliberately remains on ProtoBuffer. FlatBuffer transport is a
-separate follow-up that needs its own compatibility and migration evaluation.
+This update deliberately uses Protocol Buffers through the ProtoServer.
+FlatBuffer transport is a separate follow-up that needs its own compatibility
+and migration evaluation.
 Discovery, UI, SDK targets, MediaProjection, foreground services, package
 names, and unrelated Android modernization are outside this work.

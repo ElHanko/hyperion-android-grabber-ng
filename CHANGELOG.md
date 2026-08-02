@@ -1,73 +1,76 @@
 # Changelog
 
-## [2.1.1] — versionCode 2101 — Unreleased
+## [2.1.1] - Unreleased
 
-Erstes Kompatibilitätsupdate der zweiten Modernisierungsphase:
+TV versionCode: `2101`<br>
+Mobile versionCode: `1101`
 
 ### Changed
 
-- Das ProtoBuffer-Schema wurde exakt mit Hyperion NG 2.2.1 synchronisiert; die
-  veralteten `GRABBING`-Elemente wurden entfernt und `VIDEO` sowie `video`
-  erhielten die offiziellen Werte und Feldnummern.
-- Der TCP-Transport verwendet jetzt vollständiges Big-Endian-Framing,
-  wiederverwendete gepufferte Streams und serialisierte Request/Reply-Zugriffe.
-- Connect- und Read-Timeouts sind konfigurierbar, TCP-NoDelay ist aktiviert und
-  der Verbindungszustand wird vollständig geprüft.
-- Prioritäten, Bildabmessungen, RGB-/RGBA-Datenlängen sowie maximale Request-
-  und Reply-Größen werden vor der Verarbeitung validiert.
+- Aligned the Protocol Buffers schema exactly with Hyperion NG 2.2.1, removing
+  the obsolete `GRABBING` elements and assigning the official values and field
+  numbers to `VIDEO` and `video`.
+- Reworked the TCP transport to use complete big-endian framing, one reusable
+  pair of buffered streams per connection, and serialized request/reply
+  exchanges.
+- Added configurable connect and read timeouts, enabled TCP no-delay, and made
+  connection-state checks account for closed and shut-down sockets.
+- Added validation for priorities, image dimensions, RGB/RGBA data lengths,
+  and maximum request and reply sizes.
+- Added a disabled-by-default real-server integration test controlled only by
+  environment variables. It uses short-lived COLOR and RGB IMAGE requests and
+  attempts to clear only its own test priority.
 
 ### Fixed
 
-- Fragmentierte TCP-Header und Reply-Bodys werden vollständig eingelesen;
-  `InputStream.available()` wird nicht mehr zur Paketabgrenzung verwendet.
-- Hyperion-Fehlerantworten, fehlende Erfolgsfelder, ungültige Paketlängen,
-  Parsefehler, EOF und Read-Timeouts werden mit nachvollziehbaren Fehlertypen
-  behandelt.
-- Nach einem nicht mehr zuverlässigen Transportzustand wird die Verbindung
-  deterministisch geschlossen, sodass die vorhandene Reconnect-Logik eine neue
-  Verbindung aufbauen kann.
-- `finalize()` wurde durch idempotentes, explizites Schließen ersetzt.
+- Fragmented TCP headers and reply bodies are now read fully without using
+  `InputStream.available()` for message framing.
+- Hyperion error replies, missing success fields, invalid frame lengths, parse
+  failures, EOF, and read timeouts now produce explicit error types.
+- Unreliable transport states close deterministically so the existing reconnect
+  logic can create a fresh connection.
+- Replaced finalization with explicit, idempotent closing.
 
 ### Verified
 
-- 23 JVM-Transporttests mit lokalem `ServerSocket` prüfen Requests, Framing,
-  RGB/RGBA, fragmentierte Antworten, Fehlerfälle, mehrere Requests auf einer
-  Verbindung und einen neuen Verbindungsaufbau nach einem Abbruch.
-- Ein standardmäßig deaktivierter Integrationstest kann über Umgebungsvariablen
-  einen echten Server mit kurzzeitigen COLOR-/RGB-IMAGE-Requests prüfen und
-  räumt ausschließlich seine Testpriorität wieder auf.
-- Debug- und signierte Release-APKs für Mobile und TV wurden reproduzierbar im
-  Docker-Builder erstellt.
-- Schema- und Transportkompatibilität wurden gegen die offiziellen
-  Hyperion-NG-2.2.1-Quellen und automatisierte Fake-Server-Tests bestätigt.
-- Versionen: Mobile `1101/2.1.1`, TV `2101/2.1.1`.
+- 23 JVM transport tests using local `ServerSocket` instances
+- Protocol Buffers schema alignment against the official Hyperion NG 2.2.1 tag
+- Fake-server request framing, fragmented replies, error handling, and reconnect
+- Mobile and TV debug builds
+- Mobile and TV signed release builds
+- APK application ID, SDK, release-version, and versionCode metadata
+- APK signatures and the expected release certificate fingerprint
 
-Der reale Update-, Fire-TV- und Hyperion-Server-Test für 2.1.1 steht noch aus.
-Bis zu dessen Abschluss bleibt diese Version `Unreleased`.
+### Pending verification
 
-## [2.1.0] — versionCode 2100 — 2026-08-02
+- Update installation on the real Fire TV
+- Continuous screen capture on the real Fire TV
+- Communication with the real Hyperion server
+- Reconnect after a real server or network interruption
 
-Abschluss der ersten Modernisierungsphase:
+## [2.1.0] - 2026-08-02
+
+TV versionCode: `2100`<br>
+Mobile versionCode: `1100`
 
 ### Changed
 
-- Neue Projektidentität **Hyperion Grabber NG**.
-- Application-ID auf `com.elhanko.hyperiongrabber.ng` umgestellt.
-- Vollständige Paketmigration auf die ElHanko-Namespaces.
-- Reproduzierbares Docker-Buildsystem für Debug- und Release-Builds eingeführt.
-- Build-Toolchain auf Gradle 9.5.0, Android Gradle Plugin 9.3.0 und JDK 17
-  aktualisiert.
-- Kompilierung auf `compileSdk 36` aktualisiert.
-- Support Libraries vollständig zu AndroidX migriert.
-- Butter Knife durch Android View Binding beziehungsweise direkte Android-APIs
-  ersetzt.
-- Lokale, wiederverwendbare PKCS#12-Release-Signierung eingerichtet.
-- Versionen: Mobile `1100/2.1.0`, TV `2100/2.1.0`.
+- Renamed the project to **Hyperion Grabber NG**.
+- Changed the application ID to `com.elhanko.hyperiongrabber.ng`.
+- Completed the Java package migration to the ElHanko namespaces.
+- Added a reproducible Docker build system for debug and release builds.
+- Updated the build toolchain to Gradle 9.5.0, Android Gradle Plugin 9.3.0,
+  and JDK 17.
+- Updated compilation to `compileSdk 36`.
+- Migrated the support libraries fully to AndroidX.
+- Replaced Butter Knife with Android View Binding and direct Android APIs.
+- Added reusable local PKCS#12 release signing.
+- Set the release versions to Mobile `2.1.0` and TV `2.1.0`.
 
 ### Verified
 
-- Reproduzierbare Debug- und signierte Release-Builds für Mobile und TV.
-- Erfolgreicher Phase-1-Basistest auf Fire OS 8.
+- Reproducible debug and signed release builds for Mobile and TV
+- Successful phase-1 baseline test on Fire OS 8
 
 ## Legacy releases
 

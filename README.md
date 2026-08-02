@@ -1,135 +1,136 @@
 # Hyperion Grabber NG
 
-Hyperion Grabber NG erfasst den Bildschirminhalt eines Android-Geräts und
-überträgt ihn an einen Hyperion-Server. Das Projekt stellt getrennte Apps für
-Android-Mobilgeräte und Android TV beziehungsweise Fire TV bereit.
+Hyperion Grabber NG captures the screen of an Android device and sends it to a
+Hyperion server. The project provides separate applications for Android mobile
+devices and Android TV or Fire TV.
 
-## Status und Herkunft des Forks
+## Project status and fork history
 
-Das Projekt ist ein modernisierter Fork des ursprünglichen **Hyperion Android
-Grabber** von Dave Anderson. Der Fork wird von Mathias (ElHanko) unter dem Namen
-Hyperion Grabber NG gepflegt. Die ursprüngliche Arbeit und die Änderungen des
-Forks stehen unter der MIT-Lizenz.
+This project is a modernized fork of the original **Hyperion Android Grabber**
+created by Dave Anderson. Mathias (ElHanko) maintains the fork as Hyperion
+Grabber NG. Both the original work and the changes in this fork are available
+under the MIT License.
 
-Version 2.1.0 schloss die erste Modernisierungsphase ab und wurde auf Fire OS 8
-getestet. Version 2.1.1 synchronisiert das ProtoBuffer-Protokoll mit Hyperion NG
-2.2.1 und härtet den TCP-Transport. Ihre Builds und automatisierten Tests sind
-erfolgreich; der reale Update- und Hyperion-Test auf dem Zielgerät steht noch
-aus. Deshalb wird 2.1.1 weiterhin als `Unreleased` geführt. Details stehen im
-[Changelog](CHANGELOG.md).
+Version 2.1.0 completed the first modernization phase and received a baseline
+test on Fire OS 8. Version 2.1.1 aligns the Protocol Buffers protocol with
+Hyperion NG 2.2.1 and hardens the TCP transport. Its builds and automated tests
+are successful, but the update installation and end-to-end Hyperion test on the
+target device are still pending. Version 2.1.1 therefore remains `Unreleased`.
+See the [changelog](CHANGELOG.md) for details.
 
-## Funktionen
+## Features
 
-- Bildschirmübertragung zu Hyperion über den ProtoBuffer-TCP-Server
-- RGB- und RGBA-Bildübertragung sowie optionaler Durchschnittsfarbmodus
-- getrennte Oberflächen für Mobile, Android TV und Fire TV
-- einstellbare Serveradresse, Priorität, Bildrate und Capture-Skalierung
-- optionaler automatischer Verbindungsaufbau nach einem Transportabbruch
-- Start beim Geräteboot und Schnellzugriffsmöglichkeiten der vorhandenen Apps
-- vollständiges Request/Reply-Framing mit geprüfter Hyperion-Fehlerbehandlung
+- Screen capture sent through the Hyperion ProtoServer using Protocol Buffers
+- RGB and RGBA image transfer, plus an optional average-color mode
+- Separate user interfaces for mobile, Android TV, and Fire TV
+- Configurable server address, priority, frame rate, and capture scaling
+- Optional automatic reconnect after a transport failure
+- Start-on-boot and quick-access features provided by the existing apps
+- Complete request/reply framing with explicit Hyperion error handling
 
-## Kompatibilität
+## Compatibility
 
-| Eigenschaft | Stand |
+| Property | Value |
 | --- | --- |
-| Application-ID | `com.elhanko.hyperiongrabber.ng` |
-| Hyperion-Referenz | Hyperion NG 2.2.1 |
-| Übertragungsprotokoll | ProtoBuffer über TCP |
+| Project | Hyperion Grabber NG |
+| Application ID | `com.elhanko.hyperiongrabber.ng` |
+| Hyperion reference | Hyperion NG 2.2.1 |
+| Protocol | Protocol Buffers through the Hyperion ProtoServer |
 | `minSdk` | 21 |
 | `compileSdk` | 36 |
-| `targetSdk` | vorerst 26 |
-| Zielgerät | Fire TV Stick 4K Max, Modell AFTKRT |
+| `targetSdk` | temporarily 26 |
+| Target device | Fire TV Stick 4K Max, model AFTKRT |
 | Fire OS | 8.1.8.0 |
-| Android API des Zielgeräts | 30 |
+| Target-device Android API | 30 |
 
-Der Phase-1-Build 2.1.0 wurde auf dem genannten Fire-TV-Modell grundlegend
-getestet. Für 2.1.1 sind Schema, TCP-Framing, Fehlerbehandlung, Reconnect nach
-Abbruch und APK-Erzeugung automatisiert geprüft. Ein erfolgreicher realer
-Fire-TV- oder Hyperion-NG-2.2.1-Lauf wird erst nach dem noch ausstehenden
-manuellen Test dokumentiert.
+The 2.1.0 phase-1 build received a baseline test on the target Fire TV. For
+2.1.1, schema alignment, TCP framing, error handling, reconnect after an
+emulated connection failure, and APK generation have been verified
+automatically. Successful update installation, continuous capture, real-server
+communication, and reconnect on the physical device will only be documented
+after the pending manual test.
 
-Die genaue Protokollbasis und die Abweichungen des früheren Schemas beschreibt
-die [Hyperion-NG-2.2.1-Kompatibilitätsdokumentation](docs/hyperion-ng-2.2.1-compatibility.md).
+The [Hyperion NG 2.2.1 compatibility document](docs/hyperion-ng-2.2.1-compatibility.md)
+describes the exact protocol reference and the corrected schema differences.
 
 ## Installation
 
-Für ein bestehendes, mit demselben Release-Zertifikat installiertes TV-Paket
-kann die Release-APK mit `-r` als Update installiert werden. Der Container
-`firetv-adb` muss Zugriff auf das verbundene Gerät und auf `/workspace` haben:
+Build the release APK first as described under [Docker builds](#docker-builds).
+To install or update the TV application with Android Debug Bridge, run:
 
 ```bash
-docker exec firetv-adb \
-  adb install -r /workspace/dist/tv/tv-release.apk
+adb install -r dist/tv/tv-release.apk
 ```
 
-Die TV-Version erhöht sich dabei von `2100/2.1.0` auf `2101/2.1.1`. Vor der
-Installation sollte die APK wie im Abschnitt „Docker-Build“ beschrieben selbst
-gebaut werden. Eine bestehende Installation darf nicht deinstalliert werden,
-wenn Anwendungsdaten und die Update-Kette erhalten bleiben sollen.
+The mobile APK can be installed in the same way:
 
-## Konfiguration
+```bash
+adb install -r dist/mobile/mobile-release.apk
+```
 
-In den App-Einstellungen werden mindestens folgende Werte gesetzt:
+The `-r` option preserves the installed application and its data during an
+update. Updating from TV `2100/2.1.0` to `2101/2.1.1` also requires the new APK
+to be signed with the same certificate as the installed package. Do not
+uninstall the existing app if its data and update chain must be preserved.
 
-- Hostname oder IP-Adresse des Hyperion-Servers
-- ProtoBuffer-Port, standardmäßig `19445`
-- Priorität im für ProtoBuffer vorgesehenen Bereich `100–199`, standardmäßig
-  `150`
-- Reconnect und Reconnect-Verzögerung, standardmäßig aktiviert und fünf
-  Sekunden
-- horizontale und vertikale LED-Anzahl für die Capture-Skalierung
-- Bildrate und optionaler Durchschnittsfarbmodus
-- optionaler Start beim Geräteboot
+## Configuration
 
-Der ProtoBuffer-Server muss in der verwendeten Hyperion-Instanz erreichbar
-sein. Eine automatische neue Server-Discovery ist nicht Bestandteil dieser
-Version.
+Configure at least these values in the application settings:
 
-## Verwendung auf Android TV und Fire TV
+- Hyperion server hostname or IP address
+- ProtoServer port, default `19445`
+- priority in the ProtoServer range `100–199`, default `150`
+- reconnect and reconnect delay, enabled by default with a five-second delay
+- horizontal and vertical LED counts used for capture scaling
+- frame rate and optional average-color mode
+- optional start on device boot
 
-Nach Installation wird die TV-App über den Leanback-Launcher geöffnet. In der
-Einrichtung werden Hyperion-Host, Port und Capture-Einstellungen festgelegt.
-Danach kann die Bildschirmübertragung in der App gestartet und gestoppt werden.
-Die Android-Systemabfrage zur Bildschirmfreigabe muss bestätigt werden, wenn
-sie angezeigt wird.
+The Hyperion ProtoServer must be enabled and reachable. New automatic server
+discovery is not part of this release.
 
-Auf Fire TV gelten dieselben Einstellungen. Da der reale 2.1.1-Test noch
-aussteht, sollten Update-Installation, Verbindungsaufbau, laufendes Capture,
-Reconnect und korrektes Löschen der Hyperion-Priorität auf dem tatsächlichen
-Gerät geprüft werden.
+## Android TV and Fire TV usage
 
-## Docker-Build
+After installation, open the TV application from the Leanback launcher. Enter
+the Hyperion host, port, and capture settings during setup, then use the app to
+start or stop screen capture. Accept the Android system screen-capture prompt
+when it appears.
 
-Voraussetzung ist eine funktionierende Docker-Installation. Der Builder enthält
-die festgelegte JDK-/Android-Toolchain und verwendet einen persistenten
-Gradle-Cache.
+Fire TV uses the same settings. Because the real 2.1.1 device test is still
+pending, verify the update installation, connection setup, continuous capture,
+reconnect behavior, and cleanup of the Hyperion priority on the physical device
+before treating the release as complete.
 
-Debug-Build:
+## Docker builds
+
+A working Docker installation is required. The builder provides the pinned JDK
+and Android toolchain and uses a persistent Gradle cache.
+
+Build debug APKs:
 
 ```bash
 ./docker/build.sh debug
 ```
 
-Signierter Release-Build:
+Build signed release APKs:
 
 ```bash
 ./docker/build.sh release
 ```
 
-Die erzeugten APKs werden nach Modulen abgelegt:
+Generated APKs are collected by module under:
 
 ```text
 dist/mobile/
 dist/tv/
 ```
 
-Weitere Informationen zu Image, Cache und Build-Ablauf enthält die
-[Docker-Dokumentation](docker/README.md).
+See the [Docker build documentation](docker/README.md) for details about the
+builder image, cache, and release-build workflow.
 
-## Release-Signierung
+## Release signing
 
-Release-Signierung bleibt ausschließlich lokal. Erwartet wird diese ignorierte
-Verzeichnisstruktur im Projekt:
+Release signing remains local. The project expects this ignored directory
+structure:
 
 ```text
 signing/
@@ -137,66 +138,65 @@ signing/
 └── signing.properties
 ```
 
-Beide App-Module verwenden dieselbe PKCS#12-Konfiguration. Das Buildskript
-bindet die lokalen Dateien schreibgeschützt in den Builder ein und bricht ab,
-wenn die Konfiguration fehlt oder unvollständig ist. Keystore, Passwörter und
-andere geheime Werte dürfen nicht in das Repository aufgenommen oder in
-Dokumentation und Build-Ausgaben veröffentlicht werden.
+Both app modules use the same local PKCS#12 configuration. The build script
+mounts these files read-only and stops if the signing configuration is missing
+or incomplete. Never commit or publish the keystore, passwords, private keys,
+or other secret values in documentation or build output.
 
-## Entwicklung und Tests
+## Development and tests
 
-Die gemeinsame Android-Bibliothek enthält den ProtoBuffer-Transport und die
-generierten Nachrichtenklassen. JVM-Tests starten lokale `ServerSocket`-Server;
-Android-Hardware und ein externer Hyperion-Server sind dafür nicht erforderlich.
-Sie prüfen unter anderem COLOR, RGB/RGBA-IMAGE, CLEAR, CLEARALL, Big-Endian-
-Framing, fragmentierte Pakete, Timeouts, EOF, Serverfehler und Reconnect nach
-einem Verbindungsabbruch.
+The shared Android library contains the Protocol Buffers transport and generated
+message classes. JVM tests start local `ServerSocket` instances, so regular test
+runs work offline and require neither Android hardware nor an external Hyperion
+server. They cover COLOR, RGB/RGBA IMAGE, CLEAR, CLEARALL, big-endian framing,
+fragmented packets, timeouts, EOF, server errors, and reconnect after an
+emulated connection failure.
 
-Der vollständige Testtask lautet:
+The complete test task is:
 
 ```text
 :common:test
 ```
 
-Er wird im selben Docker-Builder wie die App-Builds ausgeführt. Vor Änderungen
-sollten außerdem die Angaben in der
-[Kompatibilitätsdokumentation](docs/hyperion-ng-2.2.1-compatibility.md) beachtet
-werden.
+It runs in the same Docker builder used for the application builds. Before
+changing the transport, also consult the
+[compatibility document](docs/hyperion-ng-2.2.1-compatibility.md).
 
-Ein zusätzlicher Test gegen einen echten Hyperion-Server ist strikt opt-in und
-benötigt `HYPERION_INTEGRATION_TESTS=1` sowie `HYPERION_TEST_HOST`,
-`HYPERION_TEST_PORT` und `HYPERION_TEST_PRIORITY=199`. Ohne dieses Flag findet
-kein Netzwerkzugriff statt. Ein fehlender oder nicht erreichbarer Testserver
-führt nur zum Überspringen des optionalen Tests und nicht zu einem Buildfehler.
-Der Test sendet ausschließlich kurzzeitige COLOR- und RGB-IMAGE-Requests und
-löscht anschließend im `finally`-Block seine eigene Priorität; `CLEARALL` wird
-nicht verwendet.
+An additional real-server test is strictly opt-in. It requires
+`HYPERION_INTEGRATION_TESTS=1`, `HYPERION_TEST_HOST`, `HYPERION_TEST_PORT`, and
+`HYPERION_TEST_PRIORITY=199`. Without the opt-in flag, it performs no network
+access. Missing configuration, an unreachable server, or a failed optional
+integration check causes that test to be skipped rather than failing the
+regular build. The test sends only short-lived COLOR and RGB IMAGE requests and
+attempts to clear its own priority in a `finally` block; it never sends
+`CLEARALL`.
 
-## Bekannte Einschränkungen
+## Known limitations
 
-- ProtoBuffer wird derzeit verwendet und von Hyperion NG 2.2.1 noch
-  unterstützt. Der Hyperion-Quellcode sieht langfristig eine Ablösung des
-  Proto-Servers vor.
-- FlatBuffer ist nicht Bestandteil dieser Phase und muss separat bewertet
-  werden.
-- Eine neue mDNS-/SSDP-Server-Discovery ist nicht Bestandteil dieser Phase.
-- `targetSdk 26` ist bewusst noch temporär. Anpassungen an neuere
-  MediaProjection- und Foreground-Service-Anforderungen folgen separat.
-- Der reale 2.1.1-Update-, Fire-TV- und Hyperion-Server-Test ist noch offen.
+- Protocol Buffers through the ProtoServer is currently used and remains
+  supported by Hyperion NG 2.2.1. Hyperion's source records a longer-term plan
+  to retire the ProtoServer after third-party clients have migrated.
+- FlatBuffer transport is not part of this phase and requires a separate
+  evaluation.
+- New mDNS/SSDP server discovery is not part of this phase.
+- `targetSdk 26` is intentionally temporary. Changes for newer MediaProjection
+  and foreground-service requirements remain separate follow-up work.
+- The real 2.1.1 update, Fire TV, continuous-capture, Hyperion-server, and
+  network-interruption tests are still pending.
 
-## Projektgeschichte
+## Project history
 
-Dave Anderson entwickelte den ursprünglichen Hyperion Android Grabber. Mathias
-(ElHanko) führt ihn als Hyperion Grabber NG fort. Die erste
-Modernisierungsphase aktualisierte Identität, Pakete, AndroidX, View Binding und
-die reproduzierbare Build- und Signierumgebung. Die zweite Phase beginnt mit
-der dokumentierten Hyperion-NG-2.2.1-ProtoBuffer-Kompatibilität und einem
-gehärteten TCP-Transport. Frühere Veröffentlichungen bleiben im
-[Changelog](CHANGELOG.md) erhalten.
+Dave Anderson developed the original Hyperion Android Grabber. Mathias
+(ElHanko) continues it as Hyperion Grabber NG. The first modernization phase
+updated the project identity, Java packages, AndroidX stack, View Binding, and
+reproducible build and signing environment. The second phase begins with the
+documented Hyperion NG 2.2.1 Protocol Buffers compatibility update and hardened
+TCP transport. Earlier releases remain available in the
+[changelog](CHANGELOG.md).
 
-## Lizenz
+## License
 
-Die ursprüngliche Arbeit von Dave Anderson und der modernisierte Fork von
-Mathias (ElHanko) stehen unter der MIT-Lizenz. Die vollständigen Hinweise stehen
-in [LICENSE.txt](LICENSE.txt). Informationen zum Umgang mit Daten enthält die
-[Datenschutzerklärung](privacy-policy.md).
+The original work by Dave Anderson and the modernized fork by Mathias (ElHanko)
+are licensed under the MIT License. See [LICENSE.txt](LICENSE.txt) for the full
+license and retained copyright notices. See the
+[privacy policy](privacy-policy.md) for information about data handling.
