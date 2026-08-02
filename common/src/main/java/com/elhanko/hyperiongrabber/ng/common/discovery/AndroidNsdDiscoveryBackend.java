@@ -106,13 +106,19 @@ public final class AndroidNsdDiscoveryBackend implements HyperionDiscoveryBacken
 
         current.stopRequested = true;
         releaseMulticastLock(current);
+        requestPlatformStop(current);
+    }
+
+    private void requestPlatformStop(Session current) {
         try {
             nsdManager.stopServiceDiscovery(current.discoveryListener);
         } catch (RuntimeException error) {
-            finishSession(current);
-            mainHandler.post(() -> current.callback.onStopFailed(
-                    current.generation,
-                    NsdManager.FAILURE_INTERNAL_ERROR));
+            if (current.started) {
+                finishSession(current);
+                mainHandler.post(() -> current.callback.onStopFailed(
+                        current.generation,
+                        NsdManager.FAILURE_INTERNAL_ERROR));
+            }
         }
     }
 
@@ -187,6 +193,7 @@ public final class AndroidNsdDiscoveryBackend implements HyperionDiscoveryBacken
         private final Map<String, NsdServiceInfo> services = new HashMap<>();
         private final NsdManager.DiscoveryListener discoveryListener;
         private WifiManager.MulticastLock multicastLock;
+        private boolean started;
         private boolean stopRequested;
 
         private Session(long generation, DiscoveryCallback callback) {
@@ -196,11 +203,18 @@ public final class AndroidNsdDiscoveryBackend implements HyperionDiscoveryBacken
                 @Override
                 public void onDiscoveryStarted(String serviceType) {
                     mainHandler.post(() -> {
-                        callback.onStarted(generation);
+                        boolean shouldStop;
                         synchronized (AndroidNsdDiscoveryBackend.this) {
-                            if (session == Session.this && stopRequested) {
-                                AndroidNsdDiscoveryBackend.this.stop(generation);
+                            if (session != Session.this) {
+                                return;
                             }
+                            started = true;
+                            shouldStop = stopRequested;
+                        }
+                        if (shouldStop) {
+                            requestPlatformStop(Session.this);
+                        } else {
+                            callback.onStarted(generation);
                         }
                     });
                 }

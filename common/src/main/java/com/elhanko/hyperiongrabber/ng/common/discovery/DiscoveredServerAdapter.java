@@ -71,7 +71,6 @@ public final class DiscoveredServerAdapter extends BaseAdapter {
                     server.getProtoServerPort(),
                     server.getHyperionVersion()));
         }
-        row.setFocusable(true);
         return row;
     }
 }
