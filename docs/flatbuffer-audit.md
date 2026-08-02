@@ -26,10 +26,10 @@ No dependency, schema, generated source, runtime client, abstraction, preference
 UI, discovery, test, manifest, or version change is part of this audit.
 
 The architecture analysis in this document remains the original audit record.
-The later, deliberately limited Stage 1 through Stage 3 implementations are
+The later, deliberately limited Stage 1 through Stage 4 implementations are
 recorded under their implementation-status headings in section 6. None of these
-stages makes FlatBuffer selectable in the application or authorizes a later
-integration stage.
+stages makes FlatBuffer selectable through the application UI or authorizes a
+later integration stage.
 
 ### Documentation consistency at the audit point
 
@@ -703,6 +703,75 @@ transport. Product integration, stored selection, a separate FlatBuffer port,
 settings UI, reconnect selection, real-server testing, and hardware validation
 remain later stages.
 
+### Stage 4 implementation status
+
+**Status:** Completed on August 2, 2026
+
+Stage 4 integrates the Stage 3 boundary into the production capture lifecycle.
+The production path is now `HyperionScreenService -> HyperionThread ->
+HyperionTransportFactory -> one selected HyperionTransport`. `HyperionThread`
+does not construct `Hyperion`, build Protocol Buffers requests, or know either
+wire protocol. It delegates frames through `setImage` with duration `-1`, delegates
+own-priority clearing through `clear`, and delegates connection shutdown through
+idempotent `close`. The encoder remains transport-neutral and unchanged.
+
+Two internal, non-visible preference keys were added:
+
+- `pref_key_transport` stores exactly `protobuf` or `flatbuffer`;
+- `pref_key_flatbuffer_port` stores the separate FlatBuffer port and has the
+  non-persisting default `19400`.
+
+The existing `pref_key_port` remains the Protocol Buffers port, and both
+transports continue to share `pref_key_host`. A missing, empty, unknown, or
+differently cased transport value resolves to Protocol Buffers. The pure-Java
+`HyperionConnectionSelection` resolver parses and validates only the port for the
+selected transport, so a damaged unselected port cannot block startup. It never
+writes, repairs, migrates, or infers preferences. FlatBuffer configurations use
+the fixed, non-personal origin `Hyperion Android Grabber NG`; Protocol Buffers
+does not require an origin.
+
+`HyperionScreenService.prepared()` resolves and snapshots the transport type,
+shared host, selected port, priority, origin, and timeouts before starting the
+connection thread. Invalid selected configuration becomes a controlled startup
+error rather than an uncaught preference parsing failure. Service logs and status
+broadcasts identify the selection as `Protocol Buffers` or `FlatBuffer
+(experimental)` through the additional stable `SERVICE_TRANSPORT` extra while
+retaining the existing status and error extras.
+
+`HyperionThread` owns one factory-driven connection loop. The factory is called
+once per attempt and only for the snapshotted type and configuration. Initial
+failure before the first successful connection remains a startup failure without
+retry. After a successful connection, an unexpected operation failure closes the
+broken transport before a replacement is created, waits using the existing
+configured reconnect delay, and retries only the same type and configuration.
+Frames arriving while no transport is active are discarded rather than queued.
+There is no probing, second diagnostic connection, or fallback to the other
+transport.
+
+Intentional stop sets the synchronized stop state and disables reconnect before
+the existing best-effort clear/close sequence. It wakes a pending reconnect delay,
+prevents later factory results from being published, suppresses late connected or
+error callbacks, and closes a candidate that finishes after stop. Repeated
+disconnect remains safe. A FlatBuffer own-priority Clear is not special-cased in
+the thread: the next image operation can use the Stage 2 client's existing lazy
+re-registration behavior on the same transport.
+
+Thirty-eight new offline JVM tests cover preference resolution, exact stored
+values, selected-port isolation, the fixed origin, factory selection, frame and
+Clear delegation, failure-category preservation, close ordering, single-loop
+reconnect, discarded frames, intentional stop and late factory completion,
+no-fallback behavior, and the service broadcast contract. The complete forced
+matrix passed with 190 Common tests (one existing opt-in Protocol Buffers
+integration test skipped), one Mobile test, and no TV JVM test sources. Mobile
+and TV Debug and signed Release APKs also built successfully with unchanged
+application ID, versions, and signing identity.
+
+Stage 4 adds no visible setting or transport switch, changes no discovery code,
+and performs no real FlatBuffer server or hardware validation. The internally
+wired FlatBuffer selection is therefore not yet a generally available or
+validated user feature. Those gates remain in Stages 5 through 8; Protocol
+Buffers remains the stable default.
+
 ## 7. Minimal transport abstraction
 
 ### Recommendation: compose the existing client through an adapter
@@ -756,11 +825,11 @@ are thread-safe and serialize protocol exchanges. The FlatBuffer implementation
 owns framing and registration state, not reconnect policy.
 
 The encoder listener can remain `sendFrame(byte[], width, height)`. Its current
-RGB output is already suitable for both transports. The direct Protocol Buffers
-request construction in `HyperionThread` must be replaced by
-`activeTransport.sendImage(...)`; that is the essential decoupling. A small
-factory seam also lets the TV color test use the selected implementation and
-makes service lifecycle tests possible without sockets.
+RGB output is already suitable for both transports. Stage 4 replaced the direct
+Protocol Buffers request construction in `HyperionThread` with
+`activeTransport.setImage(...)`; that is the essential decoupling. Its small
+factory seam makes lifecycle tests possible without sockets. Updating the
+separate TV settings color test remains Stage 5 work.
 
 ## 8. Preference and GUI model
 
@@ -788,15 +857,15 @@ The migration rules are:
 - an update with existing host/port settings remains on `protobuf`;
 - no code infers FlatBuffer from a port, server response, discovery result, or
   reachability;
-- an unrecognized stored value should be treated as invalid configuration and
-  surfaced before capture, or conservatively resolved to Protocol Buffers only
-  if a forward-compatibility policy is explicitly approved. This choice remains
-  open; it is not runtime fallback.
+- an unrecognized, empty, or differently cased stored value resolves
+  conservatively to Protocol Buffers before connection creation. This is input
+  normalization, not runtime fallback.
 
-Keep the existing common host and Protocol Buffers port keys. Add a separate
-FlatBuffer port key with a manual default of `19400`. Reading the default must not
-overwrite a previously stored value. Checking or unchecking the transport must
-not modify host, Protocol Buffers port, or FlatBuffer port.
+Stage 4 keeps the existing common host and Protocol Buffers port keys and adds
+the internal keys `pref_key_transport` and `pref_key_flatbuffer_port`. The latter
+has a manual default of `19400`; reading the default does not store it. Only the
+selected port is parsed and validated. A future UI check or uncheck must not
+modify host, Protocol Buffers port, or FlatBuffer port.
 
 Phase 3A discovery continues to browse only `_hyperiond-protobuf._tcp.` and to
 write only the common host and existing Protocol Buffers port after explicit
@@ -882,19 +951,24 @@ session.
 
 ### Transport-neutral service tests
 
-**Status:** Planned for Stage 4.
+**Stage 4 status:** Completed with 38 passing tests.
 
 Use a fake factory and fake transports to prove:
 
 - Protocol Buffers is the default for a new or missing preference;
 - existing preferences remain compatible and are not rewritten;
 - exactly one transport is created;
-- changing transport closes the previous transport through a controlled restart;
 - reconnect recreates the selected transport only;
 - intentional stop prevents reconnect;
 - no error causes an automatic fallback;
 - status and failures identify the selected transport;
 - the Protocol Buffers adapter preserves the existing client behavior and tests.
+
+The suite also proves selected-port-only validation, unchanged factory
+configuration across reconnect, close-before-replacement ordering, discarded
+frames during reconnect, wakeable reconnect delay, late-candidate cleanup, and
+the additive service broadcast contract. UI-driven transport switching and its
+controlled restart remain Stage 5 scope.
 
 ### FlatBuffer fake-server JVM tests
 
@@ -1002,13 +1076,16 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
 
 ### Stage 4 - Service lifecycle and preference guarantees
 
-**Status:** Planned
+**Status:** Completed
 
-- Route `HyperionThread` image/clear/close through exactly one selected transport.
-- Add the stored transport value and separate FlatBuffer port with missing-value
-  Protocol Buffers semantics.
-- Make stop-before-reconnect explicit and snapshot selection per capture session.
-- Add transport-neutral factory, reconnect, switching, stop, and no-fallback tests.
+- Routed `HyperionThread` image, own-priority Clear, and close through exactly one
+  selected transport created by the shared factory.
+- Added the internal stored transport value and separate FlatBuffer port with
+  safe Protocol Buffers default semantics and selected-port-only validation.
+- Snapshotted selection per capture session and implemented one wakeable reconnect
+  loop that closes before replacement and never changes transport type.
+- Made intentional stop explicit and added 38 preference, lifecycle, reconnect,
+  delegation, status-contract, and no-fallback tests.
 
 ### Stage 5 - Experimental settings UI
 
@@ -1070,39 +1147,26 @@ Each stage is independently reviewable and must leave Protocol Buffers usable.
 - FlatBuffer remains labeled experimental even after implementation until a
   separate decision changes that status.
 
-## 13. Unresolved questions and required proofs
+## 13. Remaining questions and required proofs
 
 1. What conservative FlatBuffer request and reply limits fit the largest actual
    capture dimensions on supported Android devices without memory pressure? The
    upstream server defines no explicit maximum.
-2. Should an unknown future transport preference fail visibly or resolve to the
-   stable Protocol Buffers default? Missing values are already fixed to Protocol
-   Buffers; corrupted/unknown values need a deliberate compatibility policy.
-3. What stable, non-sensitive origin string should the app register for Mobile
-   and TV, and should it include the release version? The protocol requires an
-   origin but provides no structured client/version fields.
-4. How should the Java reader state machine distinguish and order an unsolicited
-   `registered = -1` event against an in-flight normal reply? This must be proven
-   with a fake server and then a real 2.2.1 server.
-5. Does a real 2.2.1 server require immediate re-registration after an own-priority
+2. How should the Java reader state machine distinguish and order an unsolicited
+   `registered = -1` event against an in-flight normal reply on a real server?
+   The fake-server behavior is defined, but real-server proof remains pending.
+3. Does a real 2.2.1 server require immediate re-registration after an own-priority
    clear when the socket remains open, or is lazy registration before the next
    frame sufficient?
-6. Which client-local action should follow a valid non-registration server error:
+4. Which client-local action should follow a valid non-registration server error:
    reuse the synchronized socket, or close conservatively? Upstream remains open,
    but real-server tests should verify subsequent request ordering.
-7. What are the exact generated Java flags and package layout for unmodified
-   namespace `hyperionnet` under `flatc` 25.9.23? Stage 1 must record the command
-   rather than infer it from Hyperion's C++ flags.
-8. What are the measured Mobile and TV APK size deltas and D8 method counts for
-   `flatbuffers-java:25.9.23` plus generated classes?
-9. Does the FlatBuffers Java 25.9.23 runtime pass all app builds and tests at
-   `minSdk 21`, despite the upstream sample Android app using a newer minimum?
-10. Should later FlatBuffer discovery reuse the common host or introduce a
-    transport-specific discovered host? Phase 3B currently plans one shared host
-    and separate ports; discovery extension is out of scope.
-11. Should a saved transport change while capture runs be applied only at the
-    next manual start, or should settings explicitly request an immediate
-    controlled service restart? No live socket swap is allowed.
+5. Should later FlatBuffer discovery reuse the common host or introduce a
+   transport-specific discovered host? Phase 3B currently plans one shared host
+   and separate ports; discovery extension is out of scope.
+6. Should a saved transport change while capture runs be applied only at the
+   next manual start, or should settings explicitly request an immediate
+   controlled service restart? No live socket swap is allowed.
 
 ## 14. Upstream source references
 
