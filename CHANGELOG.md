@@ -1,3 +1,87 @@
+# Changelog
+
+## [2.1.1] - 2026-08-02
+
+TV versionCode: `2101`<br>
+Mobile versionCode: `1101`<br>
+Release version: `2.1.1`
+
+### Changed
+
+- Aligned the Protocol Buffers schema exactly with Hyperion NG 2.2.1, removing
+  the obsolete `GRABBING` elements and assigning the official values and field
+  numbers to `VIDEO` and `video`.
+- Reworked the TCP transport to use complete big-endian framing, one reusable
+  pair of buffered streams per connection, and serialized request/reply
+  exchanges.
+- Added configurable connect and read timeouts, enabled TCP no-delay, and made
+  connection-state checks account for closed and shut-down sockets.
+- Added validation for priorities, image dimensions, RGB/RGBA data lengths,
+  and maximum request and reply sizes.
+- Added a disabled-by-default real-server integration test controlled only by
+  environment variables. It uses short-lived COLOR and RGB IMAGE requests and
+  attempts to clear only its own test priority.
+
+### Fixed
+
+- Fragmented TCP headers and reply bodies are now read fully without using
+  `InputStream.available()` for message framing.
+- Hyperion error replies, missing success fields, invalid frame lengths, parse
+  failures, EOF, and read timeouts now produce explicit error types.
+- Unreliable transport states close deterministically so the existing reconnect
+  logic can create a fresh connection.
+- Replaced finalization with explicit, idempotent closing.
+
+### Verified
+
+- 23 JVM transport tests using local `ServerSocket` instances
+- Protocol Buffers schema alignment against the official Hyperion NG 2.2.1 tag
+- Fake-server request framing, fragmented replies, error handling, and reconnect
+- Mobile and TV debug builds
+- Mobile and TV signed release builds
+- APK application ID, SDK, release-version, and versionCode metadata
+- APK signatures and the expected release certificate fingerprint
+- Signed update installation from TV versionCode `2100` to `2101` using
+  `adb install -r`
+- Installed TV versionCode `2101` with the retained application ID
+  `com.elhanko.hyperiongrabber.ng`
+- Application startup and successful operation on an Amazon Fire TV Stick 4K
+  Max, model AFTKRT, running Fire OS 8.1.8.0 and Android API 30
+- Connection to a real Hyperion NG 2.2.1 server through the ProtoServer
+- Continuous screen capture and LED output on the real Fire TV
+- Reconnect after a real Hyperion server interruption and automatic continuation
+  after the server became available again
+- No unwanted reconnect after intentionally stopping the grabber
+- Opt-in integration test against a real Hyperion NG 2.2.1 ProtoServer:
+  `tests=1`, `skipped=0`, `failures=0`, `errors=0`; short-lived COLOR and small
+  RGB IMAGE requests were processed successfully
+
+## [2.1.0] - 2026-08-02
+
+TV versionCode: `2100`<br>
+Mobile versionCode: `1100`
+
+### Changed
+
+- Renamed the project to **Hyperion Grabber NG**.
+- Changed the application ID to `com.elhanko.hyperiongrabber.ng`.
+- Completed the Java package migration to the ElHanko namespaces.
+- Added a reproducible Docker build system for debug and release builds.
+- Updated the build toolchain to Gradle 9.5.0, Android Gradle Plugin 9.3.0,
+  and JDK 17.
+- Updated compilation to `compileSdk 36`.
+- Migrated the support libraries fully to AndroidX.
+- Replaced Butter Knife with Android View Binding and direct Android APIs.
+- Added reusable local PKCS#12 release signing.
+- Set the release versions to Mobile `2.1.0` and TV `2.1.0`.
+
+### Verified
+
+- Reproducible debug and signed release builds for Mobile and TV
+- Successful phase-1 baseline test on Fire OS 8
+
+## Legacy releases
+
 ## [v1.0]
 ### Changes
 - Arabic translation

@@ -1,66 +1,68 @@
-# Docker-Build
+# Docker build
 
-Der Builder verwendet ein fest definiertes Android-SDK und ein persistentes Docker-Volume für den Gradle-Cache. Der Quellcode wird nicht in das Image kopiert, sondern beim Build schreibbar nach `/workspace` eingebunden.
+The builder uses a pinned Android SDK and a persistent Docker volume for the
+Gradle cache. Source code is not copied into the image; it is mounted writable
+at `/workspace` during a build.
 
-## Voraussetzungen
+## Requirements
 
 - Docker
-- ausführbarer Gradle Wrapper im Repository (`gradlew`)
-- auf JDK 17 modernisierte Gradle-/Android-Gradle-Plugin-Konfiguration
+- an executable Gradle wrapper in the repository (`gradlew`)
+- the Gradle and Android Gradle Plugin configuration modernized for JDK 17
 
-## Debug-APKs bauen
+## Build debug APKs
 
 ```bash
 ./docker/build.sh
 ```
 
-oder ausdrücklich:
+or explicitly:
 
 ```bash
 ./docker/build.sh debug
 ```
 
-## Release-APKs bauen
+## Build release APKs
 
 ```bash
 ./docker/build.sh release
 ```
 
-Für Release-Builds müssen die ausschließlich lokalen, durch `.gitignore`
-geschützten Dateien vorhanden sein:
+Release builds require these local files, which are protected by `.gitignore`:
 
 ```text
 signing/hyperion-ng-release.p12
 signing/signing.properties
 ```
 
-Das Buildskript bindet dieses Verzeichnis read-only als `/signing` in den
-Builder ein. Beide App-Module laden dieselbe PKCS#12-Konfiguration aus
-`/signing/signing.properties`. Fehlt eine der Dateien oder ist die
-Konfiguration unvollständig, bricht der Release-Build ab, bevor APKs in
-`dist/` übernommen werden. Schlüsseldateien und Passwörter werden weder in
-das Docker-Image noch in das Repository kopiert.
+The build script mounts this directory read-only at `/signing`. Both app
+modules load the same PKCS#12 configuration from
+`/signing/signing.properties`. If either file is missing or the configuration
+is incomplete, the release build stops before copying APKs to `dist/`.
+Keystores and passwords are copied neither into the Docker image nor into the
+repository.
 
-## Ausgaben
+## Outputs
 
-Die erzeugten APKs werden gesammelt unter folgenden Verzeichnissen abgelegt:
+Generated APKs are collected under these directories:
 
 ```text
 dist/mobile/
 dist/tv/
 ```
 
-## Gradle-Cache
+## Gradle cache
 
-Standardmäßig wird das benannte Volume `hyperion-android-grabber-ng-gradle-cache` verwendet. Dadurch bleiben Gradle Wrapper, Abhängigkeiten und Build-Cache zwischen Builds erhalten.
+The named volume `hyperion-android-grabber-ng-gradle-cache` is used by default.
+It preserves the Gradle wrapper, dependencies, and build cache between builds.
 
-Cache löschen:
+Remove the cache:
 
 ```bash
 docker volume rm hyperion-android-grabber-ng-gradle-cache
 ```
 
-Andere Namen können über Umgebungsvariablen gesetzt werden:
+Use environment variables to select different names:
 
 ```bash
 IMAGE_NAME=my-android-builder CACHE_VOLUME=my-gradle-cache ./docker/build.sh debug
