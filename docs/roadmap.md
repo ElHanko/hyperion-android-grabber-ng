@@ -48,13 +48,35 @@ structure as one coherent system.
 
 ## Phase overview
 
-| Phase   | Scope                                                      | Status      | Release       |
-| ------- | ---------------------------------------------------------- | ----------- | ------------- |
-| Phase 1 | Project foundation, package migration and reusable signing | Completed   | 2.1.0         |
-| Phase 2 | Hyperion NG 2.2.1 Protocol Buffers compatibility           | Completed   | 2.1.1         |
-| Phase 3 | Modern discovery and experimental FlatBuffer transport     | Completed   | 2.2.0         |
-| Phase 4 | Android platform and lifecycle modernization               | Planned     | Not assigned  |
-| Phase 5 | UI modernization and localization                          | Planned     | Not assigned  |
+| Phase   | Scope                                                       | Status    | Planned release |
+| ------- | ----------------------------------------------------------- | --------- | --------------- |
+| Phase 1 | Project foundation, package migration and reusable signing | Completed | 2.1.0           |
+| Phase 2 | Hyperion NG 2.2.1 Protocol Buffers compatibility            | Completed | 2.1.1           |
+| Phase 3 | Modern discovery and experimental FlatBuffer transport      | Completed | 2.2.0           |
+| Phase 4 | Android lifecycle and current capture-pipeline optimization | Planned   | 2.3.0           |
+| Phase 5 | UI modernization and localization                           | Planned   | 2.4.0           |
+| Phase 6 | Capture-engine analysis, audit and evaluation                | Planned   | No release      |
+| Phase 7 | Implementation of the Phase 6 architecture decision         | Planned   | 2.5.0 or 3.0.0  |
+
+## Version philosophy
+
+The 2.x series represents the renovation and modernization of the existing
+application and capture architecture. It preserves the original focused
+purpose, preserves working foundations where technically justified, replaces
+obsolete surrounding components, improves the existing capture pipeline, avoids
+feature bloat, and remains recognizably the renovated original application.
+
+The version boundary after the research phase is deliberate:
+
+- `2.5.0` is possible when Phase 6 concludes that a major capture-engine
+  conversion can still be implemented within the renovated existing architecture.
+- `3.0.0` is possible when Phase 6 concludes that the technically appropriate
+  solution requires a fundamentally new capture engine.
+
+In house terms, 2.x is the complete renovation and modernization of the old
+house. Version 2.5.0 is a major conversion while the existing house remains the
+structural basis. Version 3.0.0 is the transition to a modern new house whose
+design is based on current requirements rather than historical construction.
 
 ## Phase 1 – Foundation and signed package migration
 
@@ -258,41 +280,76 @@ restart also passed. The stored FlatBuffer selection and separate port remained
 available after restart. Mobile was built, signed, and automatically tested but
 was not hardware-validated.
 
-Phase 3 and Phase 3B are complete, and version `2.2.0` is ready for publication.
-Pushing the branch, merging it, tagging `v2.2.0`, and creating the GitHub release
-are subsequent publication steps and are not recorded here as completed.
+Phase 3 and Phase 3B are complete. Version `2.2.0` was published and tagged as
+`v2.2.0`.
 
-## Phase 4 – Android platform and lifecycle modernization
+## Phase 4 – Android lifecycle and current capture-pipeline optimization
 
 **Status:** Planned  
-**Release:** Not assigned
+**Planned release:** 2.3.0
 
-Phase 4 will modernize the existing capture and service lifecycle independently
-of transport development. The Android and distribution-platform requirements
-current at implementation time will determine the exact changes. The scope is
-planned to include:
+Phase 4 remains based on the current application and capture engine. It has two
+coordinated workstreams. The target release is planned as `2.3.0`, but it remains
+unreleased and its exact implementation has not yet started.
 
-- controlled updates of compile and target SDK levels;
-- review of current Android and distribution-platform requirements;
-- modernization of MediaProjection handling;
-- modernization of Foreground Service declarations and startup order;
-- required service types and permissions;
-- notification channels and service notifications;
+### Phase 4A – Android platform and lifecycle modernization
+
+The Android, Fire OS, and distribution-platform requirements current at
+implementation time will determine the exact changes. The planned scope
+includes:
+
+- controlled compile SDK and target SDK updates;
+- review of Android, Fire OS, and distribution-platform requirements current at
+  implementation time;
+- MediaProjection lifecycle modernization;
+- Foreground Service permissions, service types, declarations, and startup order;
+- notification channels and foreground-service notifications;
 - background-start restrictions;
 - boot entry points;
 - Quick Settings entry points;
+- exported component rules;
 - deliberate-stop behavior;
-- validation on Fire OS and regular Android where possible.
+- deterministic resource cleanup;
+- validation on Fire OS and regular Android where possible;
+- explicit review of the historical upstream `release/1.1-beta_1` branch as
+  recorded in GitHub issue `#1`.
+
+Historical beta changes are evidence to review. They are not patches to copy
+blindly into the current application.
 
 No future API level is committed in advance. This phase will not introduce
 additional background features. Obsolete lifecycle workarounds should be removed
 and replaced with one consistent lifecycle rather than surrounded with further
 workarounds.
 
+### Phase 4B – Existing capture-pipeline optimization
+
+The second workstream optimizes the current capture engine before any decision
+about a fundamental replacement. Its planned scope includes:
+
+- establishing measurable baseline behavior before optimization;
+- decoupling screen capture from network transmission;
+- using a latest-frame strategy with no unbounded queue of stale frames;
+- retaining at most one pending current frame;
+- reducing per-frame allocations and garbage-collection pressure;
+- evaluating safe reusable frame buffers;
+- improving capture-resolution and scaling selection;
+- benchmarking RGB24 and RGB32 paths rather than assuming either is superior;
+- measuring CPU usage, memory behavior, frame-processing time, dropped frames,
+  network volume, and end-to-end response;
+- preserving transport-neutral operation for Protocol Buffers and FlatBuffer;
+- preserving intentional Stop, own-priority Clear, reconnect, orientation
+  handling, and update behavior;
+- considering black-bar handling, average-color processing, and adaptive frame
+  rates only after the core pipeline improvements are measured.
+
+Phase 4 optimizes the existing engine. It is not the phase for a fundamental
+capture-engine rewrite.
+
 ## Phase 5 – UI modernization and localization
 
 **Status:** Planned  
-**Release:** Not assigned
+**Planned release:** 2.4.0
 
 ### UI modernization
 
@@ -343,6 +400,138 @@ selector may depend on the Android compatibility levels reached in Phase 4.
 Localization improves accessibility and consistency; it does not expand the
 product scope.
 
+## Phase 6 – Capture-engine analysis, audit and evaluation
+
+**Status:** Planned<br>
+**Release:** No release
+
+Phase 6 is a research and decision phase, not a production implementation
+phase. Its purpose is to determine whether the future capture engine should
+remain a major conversion of the current architecture or become a fundamentally
+new implementation.
+
+### Fixed rules
+
+Phase 6 follows these rules:
+
+- no application version change;
+- no release;
+- no production feature delivery;
+- no changes to production capture code on `main`;
+- no predetermined decision between `2.5.0` and `3.0.0`;
+- no automatic merging of prototypes;
+- no assumption that the historical grabber architecture remains the correct
+  foundation;
+- no redesign of the established Hyperion transports unless the evaluation
+  proves a necessary interface change.
+
+### Evaluation perspective
+
+The investigation must begin from:
+
+1. what Hyperion actually needs from an Android screen grabber;
+2. what current Android and Fire OS APIs can efficiently provide;
+3. the simplest maintainable architecture connecting those requirements.
+
+The old capture implementation may be used as behavioral and historical
+reference, but it must not define the new design.
+
+### Required analysis
+
+The evaluation must include:
+
+- Hyperion input requirements;
+- useful image resolution and frame-rate ranges;
+- supported and useful pixel formats;
+- latency and timeout behavior;
+- full-frame versus edge-oriented or other preprocessing strategies;
+- color-space, HDR, scaling, and black-bar considerations;
+- Android MediaProjection, VirtualDisplay, Surface, ImageReader,
+  HardwareBuffer, CPU, and GPU capabilities current at evaluation time;
+- copy-count and memory-layout analysis;
+- an audit of the optimized Phase 4 engine;
+- identification of structural limits versus fixable implementation weaknesses;
+- benchmark methodology;
+- Fire TV as the primary hardware target;
+- regular Android validation where hardware is available;
+- honest documentation of unperformed hardware coverage.
+
+### Prototype branches
+
+Phase 6 may create isolated evaluation branches for focused prototypes, such as:
+
+- `evaluation/capture-surface-pipeline`;
+- `evaluation/rgb32-pipeline`;
+- `evaluation/gpu-scaling`;
+- `evaluation/edge-sampling`;
+- `evaluation/latest-frame-alternative`.
+
+Prototypes are measurement and learning tools. They may be incomplete, are not
+release candidates, must not be merged automatically, and may be discarded
+entirely. They do not change the application version and do not make Phase 6 a
+release phase.
+
+Each evaluated approach receives one documented outcome:
+
+- `Pursue`;
+- `Reference only`;
+- `Reject`;
+- `Inconclusive`.
+
+### Required outputs
+
+Phase 6 should produce:
+
+- a Hyperion requirements analysis;
+- an Android and Fire OS capture-capabilities audit;
+- an audit of the Phase 4 capture engine;
+- reproducible benchmarks;
+- prototype findings where appropriate;
+- an architecture comparison;
+- an Architecture Decision Record;
+- a concrete implementation recommendation for Phase 7.
+
+Phase 6 has no release target.
+
+## Phase 7 – Implementation of the architecture decision
+
+**Status:** Planned<br>
+**Planned release:** 2.5.0 or 3.0.0
+
+Phase 7 is the first phase allowed to implement the fundamental architecture
+decision made in Phase 6. It must not be described as already committed to
+either outcome.
+
+### Outcome A – Major conversion within the existing architecture
+
+When Phase 6 determines that the existing modernized architecture remains a
+suitable foundation, Phase 7 will:
+
+- implement the selected capture-engine conversion;
+- retain the renovated 2.x structural foundation;
+- preserve compatible application behavior and settings where sensible;
+- target version `2.5.0`.
+
+This is a major conversion of the renovated old house rather than a new
+building.
+
+### Outcome B – Fundamentally new capture engine
+
+When Phase 6 determines that the existing architecture prevents the most
+appropriate solution, Phase 7 will:
+
+- design and implement a new capture engine;
+- derive the architecture from Hyperion requirements and current Android
+  capabilities;
+- use the old grabber only as behavioral reference;
+- reuse transports, discovery, UI, settings, signing, or other components only
+  where they remain technically suitable;
+- define migration and compatibility behavior explicitly;
+- target version `3.0.0`.
+
+Version `3.0.0` marks the new-house boundary: the application purpose remains
+focused and recognizable, but the capture foundation is newly designed.
+
 ## Project principles
 
 - Keep the application small and focused.
@@ -370,6 +559,13 @@ product scope.
 - Never claim hardware validation before it has actually been performed.
 - Favor maintainable and understandable solutions over unnecessary abstraction.
 - Avoid both feature bloat and endless compatibility patching.
+- Optimize the current capture engine before deciding to replace it.
+- Let measured requirements and platform capabilities guide a future engine.
+- Do not treat historical implementation choices as permanent requirements.
+- Isolate experimental prototypes from production branches.
+- Do not assign a release version to research-only work.
+- Use major version `3.0.0` only for a genuinely fundamental new capture
+  foundation.
 
 Hyperion Android Grabber NG should remain a small and focused application. Its
 modernization preserves the working core and original purpose, removes obsolete
