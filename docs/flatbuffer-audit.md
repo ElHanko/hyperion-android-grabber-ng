@@ -1197,7 +1197,7 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
 
 ### Stage 6 - Optional real FlatBuffer integration
 
-**Status:** Implementation completed; real-server validation pending
+**Status:** Completed on August 3, 2026
 
 - Added the independently environment-gated Hyperion NG 2.2.1 FlatBuffer test
   and offline configuration contract tests.
@@ -1210,10 +1210,19 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
   220 Common tests, including the existing ProtoServer and new FlatBuffer
   real-server checks both skipped without opt-in; the Mobile test passed and TV
   has no JVM test sources.
-- A successful real-server run is still required before Stage 6 can be marked
-  completed. It must record the test date, Hyperion NG version, request results,
-  duration, own-priority cleanup, and no-fallback result without publishing a
-  private target address.
+- The isolated Docker runner completed with `BUILD SUCCESSFUL` against a real
+  Hyperion NG 2.2.1 FlatBuffer server on August 3, 2026. It used FlatBuffer port
+  `19400`, test priority `190`, and exactly one `HyperionTransportType.FLATBUFFER`
+  path through `HyperionTransportFactory`, `FlatBufferHyperionTransport`, and
+  `FlatBufferHyperionClient`.
+- The real-server run confirmed TCP connection, Register and ready state, the
+  muted Color request, RGB24 RawImage, RGB32/RGBA RawImage, own-priority Clear,
+  automatic re-registration, and a successful normal operation after
+  re-registration.
+- Final cleanup successfully cleared only priority `190` and closed the
+  connection in an orderly manner. The run used no `clearAll` and made no
+  Protocol Buffers connection, fallback, or probe.
+- No private target address is recorded.
 
 ### Stage 7 - Real Fire TV validation
 
@@ -1264,14 +1273,17 @@ Each stage is independently reviewable and must leave Protocol Buffers usable.
    capture dimensions on supported Android devices without memory pressure? The
    upstream server defines no explicit maximum.
 2. How should the Java reader state machine distinguish and order an unsolicited
-   `registered = -1` event against an in-flight normal reply on a real server?
-   The fake-server behavior is defined, but real-server proof remains pending.
+   `registered = -1` event against an in-flight normal reply? The Stage 6
+   real-server run confirms own-priority Clear followed by lazy registration and
+   a subsequent normal operation, while this narrower unsolicited-reply ordering
+   remains a future robustness question.
 3. Does a real 2.2.1 server require immediate re-registration after an own-priority
    clear when the socket remains open, or is lazy registration before the next
-   frame sufficient?
+   frame sufficient? The Stage 6 real-server run confirmed that lazy
+   re-registration before the next normal request is sufficient.
 4. Which client-local action should follow a valid non-registration server error:
    reuse the synchronized socket, or close conservatively? Upstream remains open,
-   but real-server tests should verify subsequent request ordering.
+   but this remains a future failure-mode ordering question.
 5. Should later FlatBuffer discovery reuse the common host or introduce a
    transport-specific discovered host? Phase 3B currently plans one shared host
    and separate ports; discovery extension is out of scope.
