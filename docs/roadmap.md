@@ -163,7 +163,7 @@ validation, and real Fire TV validation are documented in the
 | Stage 5 – Experimental settings UI | Completed |
 | Stage 6 – Optional real-server integration | Completed |
 | Stage 7 – Real Fire TV validation | Completed |
-| Stage 8 – Phase 3 release completion | Planned |
+| Stage 8 – Phase 3 release completion | In progress |
 
 Stages 1 through 5 are complete. The two official Hyperion NG 2.2.1 schemas, pinned
 FlatBuffers 25.9.23 toolchain and runtime, reproducible Java generation, and
@@ -202,8 +202,8 @@ FlatBuffer port, confirmation dialog, FlatBuffer capture, Stop/Clear, restart,
 and functional reconnect were all observed successfully. The hardware validation
 is limited to this primary Android TV / Fire TV use case and does not claim
 Mobile hardware or all Fire TV models. Protocol Buffers remains the stable
-production default. Stages 1 through 7 are complete, and Stage 8 remains
-planned.
+production default. Stages 1 through 7 are complete, and Stage 8
+release-candidate preparation is in progress.
 
 Protocol Buffers remains the stable default transport, including for existing
 installations. FlatBuffer is an experimental opt-in transport:
@@ -243,8 +243,19 @@ the application's purpose. Completing Stages 1 through 7 makes FlatBuffer a
 real-server- and Fire-TV-validated experimental opt-in, not a generally stable
 or universally hardware-validated transport.
 
-Stage 8 remains reserved for release `2.2.0`, final release documentation and
-audit, complete build and signing verification, merge, tag, and GitHub release.
+Stage 8 is preparing the unreleased `2.2.0` release candidate. Its documentation,
+audit, complete offline validation, signed artifacts, and build and signing
+verification are complete; the remaining manual release gates are:
+
+- install the final TV release candidate `2.2.0 / 2200`;
+- verify the in-place update from `2101` to `2200` with preserved app data;
+- run short Protocol Buffers and FlatBuffer capture regressions;
+- verify Stop/Clear and application restart;
+- finalize documentation statuses and the changelog date;
+- merge, tag, and create the GitHub release.
+
+Phase 3 remains in progress until those gates are complete. No release, merge,
+tag, or GitHub release is created by release-candidate preparation.
 
 ## Phase 4 – Android platform and lifecycle modernization
 

@@ -2,47 +2,80 @@
 
 ## [2.2.0] - Unreleased
 
+TV versionCode: `2200`<br>
+Mobile versionCode: `1200`<br>
+Release version: `2.2.0`
+
 ### Added
 
-- Added optional Android NSD discovery for the Hyperion Protocol Buffers service
-  type `_hyperiond-protobuf._tcp.` in both TV and mobile setup flows.
-- Added explicit Start, Cancel, Retry, result selection, and manual-setup paths.
-- Added a shared immutable discovery model, strict UTF-8 handling for Hyperion
-  `id` and `version` TXT records, ID/endpoint deduplication, IPv4 preference with
-  IPv6 retention, and atomic host/port adoption.
-- Added offline JVM tests for discovery validation, grouping, address handling,
-  serialized resolution, service loss, generation isolation, repeated lifecycle
-  operations, and explicit preference selection.
+- Android NSD discovery for the Protocol Buffers service
+  `_hyperiond-protobuf._tcp.`, including explicit lifecycle and server selection.
+- Reproducible official Hyperion NG 2.2.1 FlatBuffer schemas with a pinned
+  FlatBuffers compiler and runtime.
+- An isolated FlatBuffer client with Register, Color, RGB24, RGB32, and
+  own-priority Clear support.
+- A common transport abstraction with explicit `protobuf` and `flatbuffer`
+  selection, a separate FlatBuffer port, and active-transport status context.
+- Experimental FlatBuffer controls for Mobile and TV, including a D-pad
+  confirmation dialog before FlatBuffer is enabled on TV.
+- An opt-in real-server FlatBuffer integration test and isolated Docker runner.
 
 ### Changed
 
-- Discovery now uses the actual resolved DNS-SD SRV port instead of assuming the
-  manual default port `19445`.
-- TV onboarding and settings now show the shared multiple-result discovery flow;
-  mobile settings provide the same optional discovery entry point.
-- Added a short-lived, non-reference-counted multicast lock for visible discovery
-  sessions, including release handling for success, failure, cancellation, and
-  owner destruction.
+- The production capture lifecycle now uses the common transport boundary;
+  reconnect recreates only the selected transport.
+- Protocol Buffers remains the default for absent, empty, or unknown values.
+- Discovery continues to configure Protocol Buffers only, using the resolved
+  DNS-SD SRV port rather than assuming manual port `19445`.
+- Transport selection applies only at the next capture start. Mobile and TV
+  preserve separate Protocol Buffers and FlatBuffer ports.
+- Visible status and errors identify the active transport.
 
-### Removed
+### Fixed
 
-- Removed the legacy `/24` subnet scanner, sequential fixed-port TCP probing,
-  deprecated scanner task, and single-result activity.
+- Replaced the obsolete `/24` discovery scanner and fixed-port probing with
+  Android NSD discovery.
+- Hardened transport framing and error handling for the supported release paths.
+- Fixed TV FlatBuffer activation so that it requires explicit confirmation.
+  Cancel and Back no longer leave a visually enabled but unconfirmed FlatBuffer
+  state. This was found and corrected during pre-release validation, not in a
+  published 2.2.0 release.
 
 ### Verified
 
-- Platform-independent discovery tests pass without a LAN or Android device.
-- Android NSD discovery on an Amazon Fire TV Stick 4K Max, model AFTKRT,
-  running Fire OS 8.1.8.0 and Android API 30.
-- Discovery of a real Hyperion NG 2.2.1 ProtoServer through
-  `_hyperiond-protobuf._tcp.` and resolution of its SRV port `19445`.
-- Explicit server selection and transfer of the discovered host and port into
-  the existing configuration, while retaining manual configuration.
-- Successful connection through the existing Protocol Buffers transport,
-  followed by screen capture and LED output.
-- Retry, cancellation, leaving the discovery view without a stale active
-  search, and D-pad operation during the tested Fire TV flow.
-- No crash or fatal exception was observed during the tested discovery flow.
+#### Automated and offline
+
+- Common, Mobile, and TV JVM test tasks, including generated schema checks,
+  fake-server tests, adapter/factory/lifecycle/reconnect/settings tests, and
+  confirmation-dialog contracts.
+- Debug builds and signed release builds for both APKs.
+- APK metadata, v1/v2 signature schemes, and the expected release certificate
+  fingerprint.
+
+#### Real server
+
+- Phase 2 Protocol Buffers validation against Hyperion NG 2.2.1.
+- Stage 6 FlatBuffer integration against Hyperion NG 2.2.1: registration,
+  Color, RGB24, RGB32, own-priority Clear, re-registration, cleanup, and no
+  Protocol Buffers fallback in that isolated integration path.
+
+#### Fire TV Stage 7
+
+- Signed in-place APK update with retained data for the Stage 7 `2.1.1 / 2101`
+  build, not the final 2.2.0 artifact.
+- Protocol Buffers reference capture, FlatBuffer capture, D-pad settings and
+  activation dialog, Start/Stop/Clear, functional reconnect, and no app restart
+  requirement.
+- Mobile was not hardware-tested.
+
+### Known limitations
+
+- FlatBuffer remains experimental; Protocol Buffers remains the stable default.
+- There is no automatic transport fallback or FlatBuffer discovery.
+- Stage 7 covers one Fire TV model/use case. The final `2.2.0 / 2200` TV update
+  and Mobile hardware validation remain pending.
+- `targetSdk 26` remains intentionally temporary; broader lifecycle
+  modernization is planned for Phase 4.
 
 ## [2.1.1] - 2026-08-02
 

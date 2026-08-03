@@ -32,14 +32,15 @@ stages authorizes a release. Stage 6 adds an explicitly enabled real-server
 check, and Stage 7 records the separate Fire TV hardware validation. Their
 results remain distinct from the offline suite.
 
-### Documentation consistency at the audit point
+### Documentation consistency at the original audit point
 
-The existing [roadmap](roadmap.md), [discovery audit](discovery-audit.md),
-[README](../README.md), and [changelog](../CHANGELOG.md) were checked without
-modification. They consistently describe Phase 3 as in progress, Phase 3A as
-completed, Phase 3B as planned, version 2.2.0 as unreleased, and FlatBuffer as not
-implemented. Adding a link from those files is not necessary before any runtime
-work exists, so this audit remains the only documentation change.
+At the time of the original audit, the existing [roadmap](roadmap.md),
+[discovery audit](discovery-audit.md), [README](../README.md), and
+[changelog](../CHANGELOG.md) were checked without modification. They then
+described Phase 3 as in progress, Phase 3A as completed, Phase 3B as planned,
+version 2.2.0 as unreleased, and FlatBuffer as not implemented. This is a
+pre-implementation record only; the later implementation-status headings in
+this document describe the current state.
 
 ## 2. Current Protocol Buffers architecture
 
@@ -1342,15 +1343,33 @@ validation is not a release blocker for version `2.2.0` and is not claimed here.
 
 ### Stage 8 - Phase 3 release completion
 
-**Status:** Planned
+**Status:** In progress — release-candidate preparation
 
-- Update user documentation, changelog, roadmap, version metadata, and release
-  artifacts only after all prior gates pass.
-- The already planned final Phase 3 target is release `2.2.0`, TV versionCode
-  `2200`, and Mobile versionCode `1200`.
-- Do not raise those values before completed discovery, implemented experimental
-  FlatBuffer, confirmed Protocol Buffers default, automated tests, real Fire TV
-  validation, and final documentation.
+The unreleased release candidate is version `2.2.0`, TV versionCode `2200`, and
+Mobile versionCode `1200`. It preserves the existing application ID, SDK levels,
+signing identity, Protocol Buffers default, and experimental FlatBuffer status.
+
+The forced offline validation matrix passed without enabling either real-server
+integration-test environment flag: 221 Common unit tests (including two expected
+opt-in integration-test skips), one Mobile unit test, and four TV unit tests
+completed with zero failures and zero errors.
+
+Stage 8 release-candidate preparation completed the Debug builds, signed Release
+builds, APK metadata checks, and v1/v2 signature verification for both APKs.
+The metadata confirms the unchanged application ID, `minSdk 21`, temporary
+`targetSdk 26`, and the assigned release version codes. Both APKs use the
+established certificate SHA-256 fingerprint:
+
+```text
+18aa41fd37c7531ec67f7f84f14beefddff39e7cc28540d41ed0bfc602173700
+```
+
+The final TV `2.2.0 / 2200` APK has not yet been installed or hardware-validated
+as an update. No release is made before it is installed over `2.1.1 / 2101`,
+its retained data and update chain are checked, and short Protocol Buffers and
+FlatBuffer capture regressions verify Stop/Clear and restart behavior. Until
+then, Stage 8, Phase 3, and Phase 3B remain in progress and version `2.2.0`
+remains unreleased.
 
 Each stage is independently reviewable and must leave Protocol Buffers usable.
 

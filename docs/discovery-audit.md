@@ -6,8 +6,9 @@ This document contains the original discovery audit and the architecture that wa
 implemented from it during Phase 3. The sections beginning with **Original
 implementation audit** preserve the pre-implementation findings and proposal;
 the **Implemented Phase 3 architecture** section records the current repository
-state. Protocol Buffers remains the only production transport. Manual host and
-port configuration remains supported and discovery remains optional.
+state. Protocol Buffers remains the stable production transport. The discovery
+work is included in the unreleased 2.2.0 release candidate. Manual host and port
+configuration remains supported and discovery remains optional.
 
 The Hyperion findings below were verified against the official `hyperion-project/hyperion.ng` tag `2.2.1`, in particular:
 
@@ -111,8 +112,9 @@ FlatBuffer was neither enabled nor tested as part of this validation.
   behavior can still prevent results.
 - API 30 resolution exposes one host address per resolved `NsdServiceInfo`; it
   does not provide the complete address list available through newer APIs.
-- Only the usable Protocol Buffers service is browsed. FlatBuffer discovery and
-  transport are not implemented.
+- Only the usable Protocol Buffers service is browsed. FlatBuffer discovery is
+  not implemented; the separate experimental FlatBuffer transport does not
+  participate in discovery.
 - Manual host and port configuration remains the complete fallback and is not
   replaced by discovery.
 - The discovery flow has not been validated on Mobile hardware.
