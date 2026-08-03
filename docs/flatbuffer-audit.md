@@ -26,11 +26,11 @@ No dependency, schema, generated source, runtime client, abstraction, preference
 UI, discovery, test, manifest, or version change is part of this audit.
 
 The architecture analysis in this document remains the original audit record.
-The later, deliberately limited Stage 1 through Stage 6 implementations are
+The later, deliberately limited Stage 1 through Stage 7 implementations are
 recorded under their implementation-status headings in section 6. None of these
-stages validates FlatBuffer on Fire TV hardware or authorizes a release. Stage 6
-adds an explicitly enabled real-server check; its result is recorded separately
-from the offline suite.
+stages authorizes a release. Stage 6 adds an explicitly enabled real-server
+check, and Stage 7 records the separate Fire TV hardware validation. Their
+results remain distinct from the offline suite.
 
 ### Documentation consistency at the audit point
 
@@ -1224,14 +1224,121 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
   Protocol Buffers connection, fallback, or probe.
 - No private target address is recorded.
 
-### Stage 7 - Real Fire TV validation
+### Stage 7 - Fire TV hardware validation
 
-**Status:** Planned
+**Status:** Completed on August 3, 2026 for the primary Android TV / Fire TV use case
 
-- Perform the update/default, opt-in, capture, LED, interruption/reconnect,
-  intentional-stop, persistence, explicit return-to-Protobuf, no-fallback, and
-  D-pad checks listed above.
-- Record only observed TV results; do not infer Mobile validation.
+#### Validation environment and signed update path
+
+The validation used a signed TV release APK on an Amazon Fire TV device. ADB
+reported model `AFTKRT` and device codename `karat`. The installed application
+remained `com.elhanko.hyperiongrabber.ng`, version `2.1.1`, TV versionCode
+`2101`. The selected server was Hyperion NG `2.2.1` with FlatBuffer port
+`19400`; no target address or local network detail is recorded.
+
+The signed release APK was installed as an in-place update with `adb install -r`
+over an existing installation. Installation succeeded, the application ID and
+release signing remained compatible, `firstInstallTime` was retained, and
+`lastUpdateTime` changed. Existing application data and settings remained
+available. This validates the Stage 7 in-place update path for the tested TV
+release, not a general migration claim.
+
+#### Protocol Buffers reference and FlatBuffer settings
+
+After the update, the existing Protocol Buffers use case was tested first on the
+same Fire TV: the grabber started, MediaProjection captured the screen, images
+reached Hyperion, LEDs responded to image content, and stopping succeeded. This
+is a real reference-use-case check that the FlatBuffer work did not damage the
+tested Protocol Buffers flow; it is not a complete Protocol Buffers regression
+suite.
+
+FlatBuffer settings were then checked with the D-pad only. The experimental
+control is reachable, the FlatBuffer port remains separately configurable and
+retained at `19400`, and the separate Protocol Buffers port remains unchanged.
+The FlatBuffer port action is not focusable while FlatBuffer is disabled and
+becomes focusable after confirmed activation. Back navigation works, and a
+settings change does not live-switch a running transport: the selected transport
+is used only at the next grabber start.
+
+The first hardware pass found that enabling FlatBuffer showed only the permanent
+experimental summary rather than an explicit confirmation. Commit
+`6a6e965 Require confirmation before enabling FlatBuffer on TV` corrected this
+with `android.app.AlertDialog` and no additional UI library. The corrected dialog
+was revalidated on the same Fire TV. `Cancel` is initially focused, both actions
+are D-pad reachable, and Cancel leaves the persisted transport as `protobuf`,
+the control visually disabled, and the FlatBuffer port action disabled. The Back
+button and any dialog cancellation have the same result. `Enable FlatBuffer` is
+also D-pad reachable; only that deliberate confirmation stores `flatbuffer`,
+enables the port action, and retains the saved FlatBuffer port. It does not start
+or restart a grabber and does not live-switch an existing connection.
+
+No additional preference key, persistent consent boolean, migration value, or
+one-time approval is used. The confirmation is requested on every deliberate
+Protocol Buffers-to-FlatBuffer switch.
+
+#### FlatBuffer capture, stop, and restart
+
+After explicit activation, the Fire TV grabber connected to the configured
+FlatBuffer endpoint and showed the active FlatBuffer transport. MediaProjection
+capture worked, a virtual `HyperionScreenEncoder` was created, image data reached
+Hyperion, and LEDs responded continuously to changing image content. In this
+tested use case, the visible result was equivalent to the preceding Protocol
+Buffers reference behavior; this does not claim that the transports are
+technically identical or that every FlatBuffer capability was tested.
+
+The application remained stable. Stopping removed the virtual display encoder
+and released the grabber's own Hyperion priority through the normal Stop/Clear
+path. A subsequent start succeeded. No claim is made for other Fire TV models.
+
+#### Functional reconnect validation and system-level evidence
+
+With FlatBuffer selected and automatic reconnect enabled, the running server or
+FlatBuffer service was stopped for longer than one configured reconnect interval.
+The connection and LED updates stopped as expected while the application stayed
+stable and the grabber was not manually stopped or restarted. After the service
+became available again, capture transmission and LED updates resumed
+automatically without an application restart. The grabber could then be stopped
+and started normally. The FlatBuffer reconnect scenario therefore passed as a
+functional Fire TV validation.
+
+A system-level Fire OS log provided supplementary lifecycle evidence only:
+
+- `10:10:21`: capture started under application process PID `25843`.
+- `10:16:05`: the same process remained active and the foreground notification
+  was active.
+- `10:20:21`: manual stop retained that process, removed the foreground
+  notification, and removed `HyperionScreenEncoder`.
+- `10:20:25`: manual restart created a new `HyperionScreenEncoder`, switched it
+  to `ON`, and created the foreground notification again.
+
+A system-level Fire OS log confirmed that the application process remained alive
+during the validation run and that subsequent stop and restart operations cleanly
+removed and recreated the virtual capture display and foreground service
+notification. The signed release build did not expose application-specific
+transport or reconnect messages, so the reconnect boundary and continued
+FlatBuffer selection were validated functionally and through the existing
+transport architecture and tests rather than through an application-level
+reconnect trace.
+
+Accordingly, the system log does not directly establish the socket-disconnect
+time, individual reconnect attempts, a successful transport handshake, the
+transport name, the selected port or priority, the resumed network transfer, or
+the absence of a Protocol Buffers fallback.
+
+#### No-fallback boundary and Mobile scope
+
+Functionally, transmission resumed after the FlatBuffer service returned without
+a settings change, while the application stayed on its previously selected
+FlatBuffer configuration. No visible port probing or transport switch was
+observed. The system-level log alone cannot prove this. The no-fallback guarantee
+is primarily established by the selected-transport preference, transport factory,
+lifecycle tests, and Stage 6 real-server integration; Stage 7 adds real Fire TV
+functional validation to that evidence.
+
+The Mobile APK continued to build, and existing Mobile and Common tests remained
+part of the test matrix. Stage 7 contains no Mobile hardware validation. It is
+completed for the primary Android TV / Fire TV use case; Mobile hardware
+validation is not a release blocker for version `2.2.0` and is not claimed here.
 
 ### Stage 8 - Phase 3 release completion
 

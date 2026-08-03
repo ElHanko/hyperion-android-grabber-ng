@@ -162,7 +162,7 @@ validation, and real Fire TV validation are documented in the
 | Stage 4 – Production lifecycle integration | Completed |
 | Stage 5 – Experimental settings UI | Completed |
 | Stage 6 – Optional real-server integration | Completed |
-| Stage 7 – Real Fire TV validation | Planned |
+| Stage 7 – Real Fire TV validation | Completed |
 | Stage 8 – Phase 3 release completion | Planned |
 
 Stages 1 through 5 are complete. The two official Hyperion NG 2.2.1 schemas, pinned
@@ -189,13 +189,21 @@ lifecycle, reconnect, delegation, status, and no-fallback guarantees.
 FlatBuffer is now an explicit experimental opt-in in both Mobile and TV settings.
 The visible control stores only the existing string selection and retains separate
 ports; it does not live-swap a running capture session. No FlatBuffer discovery
-or hardware validation has been completed. The independently opt-in Stage 6 JVM
-test successfully validated a real Hyperion NG 2.2.1 FlatBuffer server on August
-3, 2026, using port `19400` and priority `190`. It confirmed the factory-driven
-FlatBuffer-only path, registration, Color, RGB24, RGB32, own-priority Clear,
-re-registration, cleanup, and orderly close without a Protocol Buffers fallback.
-Protocol Buffers remains the stable production default. Stages 1 through 6 are
-complete, and Stages 7 through 8 remain planned.
+has been completed. The independently opt-in Stage 6 JVM test successfully
+validated a real Hyperion NG 2.2.1 FlatBuffer server on August 3, 2026, using
+port `19400` and priority `190`. It confirmed the factory-driven FlatBuffer-only
+path, registration, Color, RGB24, RGB32, own-priority Clear, re-registration,
+cleanup, and orderly close without a Protocol Buffers fallback.
+
+Stage 7 then validated the signed TV release APK on an Amazon Fire TV device
+reported by ADB as `AFTKRT` / `karat`. The in-place update path, retained app
+data, Protocol Buffers reference use case, D-pad settings flow, separate
+FlatBuffer port, confirmation dialog, FlatBuffer capture, Stop/Clear, restart,
+and functional reconnect were all observed successfully. The hardware validation
+is limited to this primary Android TV / Fire TV use case and does not claim
+Mobile hardware or all Fire TV models. Protocol Buffers remains the stable
+production default. Stages 1 through 7 are complete, and Stage 8 remains
+planned.
 
 Protocol Buffers remains the stable default transport, including for existing
 installations. FlatBuffer is an experimental opt-in transport:
@@ -226,15 +234,17 @@ status presentation contracts. Stage 6 implementation additionally provides a
 factory-driven, opt-in FlatBuffer server test for Register, Color, RGB24, RGB32,
 own-priority Clear, and re-registration. It is skipped unless explicitly enabled
 and has no Protocol Buffers fallback. Its real Hyperion NG 2.2.1 validation
-completed successfully on August 3, 2026. Later required validation includes:
-
-- real Fire TV validation;
-- verification that Protocol Buffers remains the unchanged default.
+completed successfully on August 3, 2026. Stage 7 completed the real Fire TV
+functional validation of the signed TV release while retaining Protocol Buffers
+as the stable default.
 
 FlatBuffer is a possible modern technical transport path, not an expansion of
-the application's purpose. Completing Stages 1 through 6 makes FlatBuffer a
-real-server-validated experimental opt-in, not a stable or hardware-validated
-transport.
+the application's purpose. Completing Stages 1 through 7 makes FlatBuffer a
+real-server- and Fire-TV-validated experimental opt-in, not a generally stable
+or universally hardware-validated transport.
+
+Stage 8 remains reserved for release `2.2.0`, final release documentation and
+audit, complete build and signing verification, merge, tag, and GitHub release.
 
 ## Phase 4 – Android platform and lifecycle modernization
 
