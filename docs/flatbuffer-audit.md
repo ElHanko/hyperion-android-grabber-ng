@@ -26,10 +26,11 @@ No dependency, schema, generated source, runtime client, abstraction, preference
 UI, discovery, test, manifest, or version change is part of this audit.
 
 The architecture analysis in this document remains the original audit record.
-The later, deliberately limited Stage 1 through Stage 5 implementations are
+The later, deliberately limited Stage 1 through Stage 6 implementations are
 recorded under their implementation-status headings in section 6. None of these
-stages validates FlatBuffer against a real server or hardware, or authorizes a
-later integration stage.
+stages validates FlatBuffer on Fire TV hardware or authorizes a release. Stage 6
+adds an explicitly enabled real-server check; its result is recorded separately
+from the offline suite.
 
 ### Documentation consistency at the audit point
 
@@ -1062,23 +1063,63 @@ fixtures are reproducibly documented.
 
 ### Optional real integration test
 
-Add an opt-in test only after the fake-server suite is complete. Suggested
-environment variables are:
+Stage 6 provides a separate JVM test,
+[`FlatBufferHyperionIntegrationTest`](../common/src/test/java/com/elhanko/hyperiongrabber/ng/common/network/flatbuffer/FlatBufferHyperionIntegrationTest.java),
+that exercises the production-facing path rather than a second protocol client:
 
 ```text
-HYPERION_FLATBUFFER_INTEGRATION_TESTS=1
-HYPERION_TEST_HOST=<explicit host>
-HYPERION_TEST_FLATBUFFER_PORT=<explicit port>
-HYPERION_TEST_PRIORITY=199
+HyperionTransportFactory
+  -> FlatBufferHyperionTransport
+  -> FlatBufferHyperionClient
+  -> selected real Hyperion NG 2.2.1 FlatBuffer server
 ```
 
-Without the exact opt-in value, the test performs no network access. It connects,
-registers a non-secret origin, sends one short color and one very small RGB image
-with a duration no longer than 1,000 ms, checks their replies, and in `finally`
-attempts to clear only priority `199` and close. It never sends `Clear(-1)`, never
-changes server configuration or instances, and contains no fixed private server
-address. Unreachable optional infrastructure is reported separately and does not
-fail the regular offline build.
+It is enabled only when `HYPERION_FLATBUFFER_INTEGRATION_TEST=1` exactly. A
+missing, empty, `0`, `true`, `yes`, or any other value is skipped with a JUnit
+assumption before host parsing, DNS resolution, or socket construction. Once
+enabled, missing or malformed configuration and every connection or protocol
+failure fail clearly; they are not silently converted into a skipped test.
+
+The supported environment variables are:
+
+```text
+HYPERION_FLATBUFFER_INTEGRATION_TEST=1  required exact opt-in
+HYPERION_FLATBUFFER_HOST=<explicit host> required once enabled
+HYPERION_FLATBUFFER_PORT=19400          optional, valid range 1..65535
+HYPERION_FLATBUFFER_PRIORITY=190        optional, valid range 100..199
+HYPERION_FLATBUFFER_CONNECT_TIMEOUT_MS=3000  optional, positive
+HYPERION_FLATBUFFER_READ_TIMEOUT_MS=3000     optional, positive
+```
+
+The registered origin is the fixed non-personal string `Hyperion Android Grabber
+NG integration test`. The test creates exactly one `FLATBUFFER` transport and
+has no Protocol Buffers fallback, probe, or second connection type. It verifies
+registration, one muted `0x102030` Color request, a static 2-by-2 RGB24 image,
+a static 2-by-2 RGB32 image, own-priority Clear, and lazy re-registration on a
+subsequent Color request. RGB32 testing only verifies that four bytes per pixel
+are accepted; the Hyperion NG 2.2.1 server uses the first three bytes as RGB and
+ignores the fourth byte.
+
+The `finally` path best-effort clears only its configured priority and closes the
+transport. A cleanup failure is attached to the primary failure instead of
+masking it. The test never uses `clearAll`, changes configuration or instances,
+or contains a fixed private address.
+
+Use the reproducible Docker runner only against an explicitly selected test
+server:
+
+```bash
+HYPERION_FLATBUFFER_INTEGRATION_TEST=1 \
+HYPERION_FLATBUFFER_HOST='<hyperion-host>' \
+HYPERION_FLATBUFFER_PORT=19400 \
+HYPERION_FLATBUFFER_PRIORITY=190 \
+./tools/run-flatbuffer-integration-test.sh
+```
+
+The runner passes only the FlatBuffer integration variables into the existing
+Docker builder and runs only this test class. It copies the source into a
+temporary isolated workspace, so generated build outputs are cleaned up without
+changing ownership in the working tree. Protocol Buffers is not contacted.
 
 ### Real hardware validation
 
@@ -1156,11 +1197,23 @@ Do not claim Mobile hardware compatibility until it is tested on Mobile hardware
 
 ### Stage 6 - Optional real FlatBuffer integration
 
-**Status:** Planned
+**Status:** Implementation completed; real-server validation pending
 
-- Add the environment-gated Hyperion NG 2.2.1 FlatBuffer test.
-- Record registration, color, RGB image, replies, own-priority cleanup, and close
-  separately from the offline suite.
+- Added the independently environment-gated Hyperion NG 2.2.1 FlatBuffer test
+  and offline configuration contract tests.
+- The test uses the factory and adapter path, validates Register, Color, RGB24,
+  RGB32, own-priority Clear, re-registration, ready state, cleanup, and the
+  absence of a Protocol Buffers fallback.
+- Added an isolated Docker runner that forwards no protobuf-integration opt-in
+  and leaves no generated build output in the working tree.
+- The offline configuration contracts and the regular JVM matrix passed with
+  220 Common tests, including the existing ProtoServer and new FlatBuffer
+  real-server checks both skipped without opt-in; the Mobile test passed and TV
+  has no JVM test sources.
+- A successful real-server run is still required before Stage 6 can be marked
+  completed. It must record the test date, Hyperion NG version, request results,
+  duration, own-priority cleanup, and no-fallback result without publishing a
+  private target address.
 
 ### Stage 7 - Real Fire TV validation
 

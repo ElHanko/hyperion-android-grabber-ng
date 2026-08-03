@@ -161,7 +161,7 @@ validation, and real Fire TV validation are documented in the
 | Stage 3 – Common transport boundary | Completed |
 | Stage 4 – Production lifecycle integration | Completed |
 | Stage 5 – Experimental settings UI | Completed |
-| Stage 6 – Optional real-server integration | Planned |
+| Stage 6 – Optional real-server integration | In progress |
 | Stage 7 – Real Fire TV validation | Planned |
 | Stage 8 – Phase 3 release completion | Planned |
 
@@ -188,10 +188,12 @@ lifecycle, reconnect, delegation, status, and no-fallback guarantees.
 
 FlatBuffer is now an explicit experimental opt-in in both Mobile and TV settings.
 The visible control stores only the existing string selection and retains separate
-ports; it does not live-swap a running capture session. No FlatBuffer discovery,
-real-server test, or hardware validation has been implemented. Protocol Buffers
-remains the stable production default. Stage 5 is complete; Stages 6 through 8
-remain planned.
+ports; it does not live-swap a running capture session. No FlatBuffer discovery
+or hardware validation has been completed. Stage 6 now has an independently
+opt-in real-server JVM test, but no target was inferred and no successful
+real-server run is recorded yet. Protocol Buffers remains the stable production
+default. Stages 1 through 5 are complete, Stage 6 is in progress pending
+real-server validation, and Stages 7 through 8 remain planned.
 
 Protocol Buffers remains the stable default transport, including for existing
 installations. FlatBuffer is an experimental opt-in transport:
@@ -218,9 +220,12 @@ Hyperion transport abstraction
 The completed Stage 1 through Stage 5 validation covers generated code from the
 official Hyperion NG FlatBuffer schema, the isolated framed socket client, both
 transport adapters, the factory-driven production lifecycle, and the settings and
-status presentation contracts. Later planned validation includes:
+status presentation contracts. Stage 6 implementation additionally provides a
+factory-driven, opt-in FlatBuffer server test for Register, Color, RGB24, RGB32,
+own-priority Clear, and re-registration. It is skipped unless explicitly enabled
+and has no Protocol Buffers fallback. Later required validation includes:
 
-- an optional real-server integration test;
+- execution of that optional real-server integration test;
 - real Fire TV validation;
 - verification that Protocol Buffers remains the unchanged default.
 
