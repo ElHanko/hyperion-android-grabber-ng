@@ -6,9 +6,9 @@ This document contains the original discovery audit and the architecture that wa
 implemented from it during Phase 3. The sections beginning with **Original
 implementation audit** preserve the pre-implementation findings and proposal;
 the **Implemented Phase 3 architecture** section records the current repository
-state. Protocol Buffers remains the stable production transport. The discovery
-work is included in the unreleased 2.2.0 release candidate. Manual host and port
-configuration remains supported and discovery remains optional.
+state. Phase 3A is completed, and the discovery work is released as part of
+version 2.2.0. Protocol Buffers remains the stable production transport. Manual
+host and port configuration remains supported and discovery remains optional.
 
 The Hyperion findings below were verified against the official `hyperion-project/hyperion.ng` tag `2.2.1`, in particular:
 

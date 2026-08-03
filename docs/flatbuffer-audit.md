@@ -2,10 +2,11 @@
 
 ## 1. Scope and product constraints
 
-This document records the technical audit and implementation plan for Phase 3B.
-It is not an implementation specification that makes FlatBuffer available in a
-current build. The repository state reviewed for this audit is based on Hyperion
-NG 2.2.1 and the existing Android Protocol Buffers transport.
+This document preserves the original technical audit and records the completed
+staged implementation of Phase 3B. The pre-implementation architecture reviewed
+by the original audit was based on Hyperion NG 2.2.1 and the existing Android
+Protocol Buffers transport; the implementation-status sections record the later
+repository state through the version 2.2.0 release.
 
 The product constraints are fixed:
 
@@ -23,14 +24,15 @@ The product constraints are fixed:
   add FlatBuffer discovery.
 
 No dependency, schema, generated source, runtime client, abstraction, preference,
-UI, discovery, test, manifest, or version change is part of this audit.
+UI, discovery, test, manifest, or version change was made by the original audit
+itself.
 
 The architecture analysis in this document remains the original audit record.
-The later, deliberately limited Stage 1 through Stage 7 implementations are
-recorded under their implementation-status headings in section 6. None of these
-stages authorizes a release. Stage 6 adds an explicitly enabled real-server
-check, and Stage 7 records the separate Fire TV hardware validation. Their
-results remain distinct from the offline suite.
+The later, deliberately limited Stage 1 through Stage 8 implementations are
+recorded under their implementation-status headings in section 6. Stage 6 adds
+an explicitly enabled real-server check, Stage 7 records the separate Fire TV
+hardware validation, and Stage 8 records release completion. Their results
+remain distinct from the offline suite.
 
 ### Documentation consistency at the original audit point
 
@@ -1343,33 +1345,51 @@ validation is not a release blocker for version `2.2.0` and is not claimed here.
 
 ### Stage 8 - Phase 3 release completion
 
-**Status:** In progress — release-candidate preparation
+**Status:** Completed on August 3, 2026
 
-The unreleased release candidate is version `2.2.0`, TV versionCode `2200`, and
-Mobile versionCode `1200`. It preserves the existing application ID, SDK levels,
-signing identity, Protocol Buffers default, and experimental FlatBuffer status.
+The final release is version `2.2.0`, TV versionCode `2200`, and Mobile
+versionCode `1200`. It preserves application ID
+`com.elhanko.hyperiongrabber.ng`, the existing SDK levels and signing identity,
+the Protocol Buffers default, and FlatBuffer's experimental opt-in status.
 
 The forced offline validation matrix passed without enabling either real-server
-integration-test environment flag: 221 Common unit tests (including two expected
-opt-in integration-test skips), one Mobile unit test, and four TV unit tests
-completed with zero failures and zero errors.
-
-Stage 8 release-candidate preparation completed the Debug builds, signed Release
-builds, APK metadata checks, and v1/v2 signature verification for both APKs.
-The metadata confirms the unchanged application ID, `minSdk 21`, temporary
-`targetSdk 26`, and the assigned release version codes. Both APKs use the
-established certificate SHA-256 fingerprint:
+integration-test environment flag: 221 Common unit tests with two expected
+opt-in skips, one Mobile unit test, and four TV unit tests completed with zero
+failures and zero errors. Both Debug builds and signed Release builds completed.
+APK metadata, v1 and v2 signatures, and the common established release
+certificate were verified. The certificate SHA-256 fingerprint is:
 
 ```text
 18aa41fd37c7531ec67f7f84f14beefddff39e7cc28540d41ed0bfc602173700
 ```
 
-The final TV `2.2.0 / 2200` APK has not yet been installed or hardware-validated
-as an update. No release is made before it is installed over `2.1.1 / 2101`,
-its retained data and update chain are checked, and short Protocol Buffers and
-FlatBuffer capture regressions verify Stop/Clear and restart behavior. Until
-then, Stage 8, Phase 3, and Phase 3B remain in progress and version `2.2.0`
-remains unreleased.
+The final signed APK checksums are:
+
+```text
+Mobile: 1519c7defd919a4fee630a3e38f387e927b7ac3b2dcdfa5354e7edeae38d5baf
+TV:     c682160145412c5d1b7996ae4089e8a0df835b04dde5ba59fa7a232a8f3c82fd
+```
+
+The exact final TV artifact was installed successfully with `adb install -r`
+over `2.1.1 / 2101`. The resulting installation reported `2.2.0 / 2200` with
+the same application ID and a compatible signature. `firstInstallTime` remained
+unchanged, `lastUpdateTime` advanced, and existing application data and settings
+were retained, including host, both transport ports, priority, reconnect, and
+capture settings.
+
+A short Protocol Buffers regression confirmed MediaProjection, image transfer,
+responsive LED output, and Stop/Clear of the selected priority. A separate
+explicitly confirmed FlatBuffer regression verified the active FlatBuffer status,
+port `19400`, MediaProjection, image transfer, responsive LED output, and
+Stop/Clear of its own priority without a visible error. After an application
+force-stop and restart, the app started normally, retained the FlatBuffer
+selection and port, and could start and stop the grabber again.
+
+The final artifact did not repeat the server-interruption reconnect scenario;
+Stage 7 remains the functional reconnect evidence for the same implementation.
+The system-log evidence and its limits documented in Stage 7 remain unchanged.
+Mobile `2.2.0 / 1200` was built, signed, and automatically tested but was not
+hardware-validated. Stage 8, Phase 3B, and Phase 3 are completed.
 
 Each stage is independently reviewable and must leave Protocol Buffers usable.
 
@@ -1411,8 +1431,8 @@ Each stage is independently reviewable and must leave Protocol Buffers usable.
    reuse the synchronized socket, or close conservatively? Upstream remains open,
    but this remains a future failure-mode ordering question.
 5. Should later FlatBuffer discovery reuse the common host or introduce a
-   transport-specific discovered host? Phase 3B currently plans one shared host
-   and separate ports; discovery extension is out of scope.
+   transport-specific discovered host? Phase 3B uses one shared host and separate
+   ports; a discovery extension remains out of scope.
 
 ## 14. Upstream source references
 

@@ -52,7 +52,7 @@ structure as one coherent system.
 | ------- | ---------------------------------------------------------- | ----------- | ------------- |
 | Phase 1 | Project foundation, package migration and reusable signing | Completed   | 2.1.0         |
 | Phase 2 | Hyperion NG 2.2.1 Protocol Buffers compatibility           | Completed   | 2.1.1         |
-| Phase 3 | Modern discovery and experimental FlatBuffer transport     | In progress | 2.2.0 planned |
+| Phase 3 | Modern discovery and experimental FlatBuffer transport     | Completed   | 2.2.0         |
 | Phase 4 | Android platform and lifecycle modernization               | Planned     | Not assigned  |
 | Phase 5 | UI modernization and localization                          | Planned     | Not assigned  |
 
@@ -107,13 +107,14 @@ production transport established by this phase.
 
 ## Phase 3 – Discovery and experimental FlatBuffer transport
 
-**Status:** In progress  
-**Planned release:** 2.2.0
+**Status:** Completed
 
-Phase 3 contains two separate technical workstreams. Discovery improves how the
-existing Protocol Buffers endpoint is configured. Experimental FlatBuffer work
-will evaluate an alternative transport without changing the application's
-purpose or the stable default.
+**Release:** 2.2.0
+
+Phase 3 delivered two separate technical workstreams. Discovery improves how the
+existing Protocol Buffers endpoint is configured. Experimental FlatBuffer adds
+an alternative opt-in transport without changing the application's purpose or
+the stable default.
 
 ### Phase 3A – Modern Hyperion discovery
 
@@ -152,7 +153,7 @@ validation, and real Fire TV validation are documented in the
 
 ### Phase 3B – Experimental FlatBuffer transport
 
-**Status:** In progress
+**Status:** Completed
 
 | FlatBuffer stage | Status |
 | --- | --- |
@@ -163,7 +164,7 @@ validation, and real Fire TV validation are documented in the
 | Stage 5 – Experimental settings UI | Completed |
 | Stage 6 – Optional real-server integration | Completed |
 | Stage 7 – Real Fire TV validation | Completed |
-| Stage 8 – Phase 3 release completion | In progress |
+| Stage 8 – Phase 3 release completion | Completed |
 
 Stages 1 through 5 are complete. The two official Hyperion NG 2.2.1 schemas, pinned
 FlatBuffers 25.9.23 toolchain and runtime, reproducible Java generation, and
@@ -202,8 +203,7 @@ FlatBuffer port, confirmation dialog, FlatBuffer capture, Stop/Clear, restart,
 and functional reconnect were all observed successfully. The hardware validation
 is limited to this primary Android TV / Fire TV use case and does not claim
 Mobile hardware or all Fire TV models. Protocol Buffers remains the stable
-production default. Stages 1 through 7 are complete, and Stage 8
-release-candidate preparation is in progress.
+production default. Stages 1 through 8 are complete.
 
 Protocol Buffers remains the stable default transport, including for existing
 installations. FlatBuffer is an experimental opt-in transport:
@@ -239,23 +239,28 @@ functional validation of the signed TV release while retaining Protocol Buffers
 as the stable default.
 
 FlatBuffer is a possible modern technical transport path, not an expansion of
-the application's purpose. Completing Stages 1 through 7 makes FlatBuffer a
+the application's purpose. Completing Stages 1 through 8 makes FlatBuffer a
 real-server- and Fire-TV-validated experimental opt-in, not a generally stable
 or universally hardware-validated transport.
 
-Stage 8 is preparing the unreleased `2.2.0` release candidate. Its documentation,
-audit, complete offline validation, signed artifacts, and build and signing
-verification are complete; the remaining manual release gates are:
+Stage 8 completed version `2.2.0`, TV versionCode `2200`, and Mobile versionCode
+`1200`. The final offline matrix passed with 221 Common tests and two expected
+opt-in skips, one Mobile test, and four TV tests. Debug and signed Release builds,
+APK metadata, v1/v2 signatures, and the established release certificate were
+verified.
 
-- install the final TV release candidate `2.2.0 / 2200`;
-- verify the in-place update from `2101` to `2200` with preserved app data;
-- run short Protocol Buffers and FlatBuffer capture regressions;
-- verify Stop/Clear and application restart;
-- finalize documentation statuses and the changelog date;
-- merge, tag, and create the GitHub release.
+The exact final TV artifact passed the signed in-place update from
+`2101 / 2.1.1` to `2200 / 2.2.0`. Installation and application data remained
+available, including the original `firstInstallTime` and the existing endpoint,
+priority, reconnect, and capture settings. Short Protocol Buffers and FlatBuffer
+capture regressions, Stop/Clear for both paths, and an application force-stop and
+restart also passed. The stored FlatBuffer selection and separate port remained
+available after restart. Mobile was built, signed, and automatically tested but
+was not hardware-validated.
 
-Phase 3 remains in progress until those gates are complete. No release, merge,
-tag, or GitHub release is created by release-candidate preparation.
+Phase 3 and Phase 3B are complete, and version `2.2.0` is ready for publication.
+Pushing the branch, merging it, tagging `v2.2.0`, and creating the GitHub release
+are subsequent publication steps and are not recorded here as completed.
 
 ## Phase 4 – Android platform and lifecycle modernization
 

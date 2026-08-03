@@ -11,11 +11,10 @@ Grabber**. Mathias (ElHanko) maintains the fork. Both the original work and the
 fork are available under the MIT License.
 
 Version 2.1.0 is the foundation release. Version 2.1.1 is the Hyperion NG 2.2.1
-Protocol Buffers release. Version 2.2.0 is an **unreleased release candidate**:
-Phase 3A Android NSD discovery is complete, and Phase 3B's experimental
-FlatBuffer transport is implemented and validated through Stage 7. Stage 8,
-release completion, remains in progress. The final 2.2.0 APK update still needs
-real Fire TV validation before release. See the [changelog](CHANGELOG.md) and
+Protocol Buffers release. Version 2.2.0, released on August 3, 2026, completes
+Phase 3: Phase 3A delivered Android NSD discovery for Protocol Buffers, and
+Phase 3B delivered the experimental FlatBuffer opt-in. Protocol Buffers remains
+the stable default. See the [changelog](CHANGELOG.md) and
 [roadmap](docs/roadmap.md).
 
 ## Features
@@ -45,12 +44,21 @@ recommended replacement for Protocol Buffers.
 | `compileSdk` | 36 |
 | `targetSdk` | temporarily 26 |
 
-Stage 7 was validated on an Amazon Fire TV device reported as `AFTKRT` / `karat`.
-The Protocol Buffers reference use case and the experimental FlatBuffer use case
-were tested functionally. That Stage 7 app still carried version `2.1.1` / TV
-versionCode `2101`. The final `2.2.0` / `2200` TV update remains pending real
-hardware validation. The mobile APK is built and automatically tested, but has
-not been validated on real mobile hardware.
+Stage 7 provided comprehensive FlatBuffer hardware validation on an Amazon Fire
+TV while the tested app still carried version `2.1.1` / TV versionCode `2101`.
+The final signed `2.2.0` / `2200` TV build was subsequently validated as an
+in-place update and through short Protocol Buffers, FlatBuffer, Stop/Clear, and
+application-restart regressions on the following environment:
+
+| Property | Validated value |
+| --- | --- |
+| Device | Amazon Fire TV |
+| ADB model | `AFTKRT` |
+| Device codename | `karat` |
+| Platform | Fire OS 8 / Android API 30 |
+
+The Mobile `2.2.0` / `1200` APK was built, signed, and automatically tested, but
+has not been validated on real mobile hardware.
 
 The exact Protocol Buffers reference is described in the
 [Hyperion NG 2.2.1 compatibility document](docs/hyperion-ng-2.2.1-compatibility.md).
@@ -65,11 +73,11 @@ adb install -r dist/tv/tv-release.apk
 adb install -r dist/mobile/mobile-release.apk
 ```
 
-`-r` retains the installed application and its data when the signing certificate
-matches the existing installation. Do not uninstall if data and the update chain
-must be retained. The planned TV update is `2101 -> 2200`; the planned mobile
-update is `1101 -> 1200`. The final TV `2200` update has not yet been validated
-on Fire TV hardware.
+The signed TV update path `2101 / 2.1.1 -> 2200 / 2.2.0` was successfully
+validated with `adb install -r`. The compatible signature retained the existing
+application, its data and settings, and the original `firstInstallTime` while
+updating `lastUpdateTime`. Uninstalling would remove application data and break
+this update path, so it is not part of the update procedure.
 
 ## Configuration
 
@@ -143,6 +151,8 @@ HYPERION_FLATBUFFER_PORT=19400 \
 
 Both real-server tests are opt-in and do not run during normal offline builds.
 Stage 7 additionally validated the primary Fire TV use case on real hardware.
+The final `2.2.0 / 2200` TV artifact passed its signed in-place update and short
+Protocol Buffers, FlatBuffer, Stop/Clear, and application-restart regressions.
 
 ## Known limitations
 
@@ -150,8 +160,7 @@ Stage 7 additionally validated the primary Fire TV use case on real hardware.
 - There is no automatic transport fallback.
 - FlatBuffer discovery is not implemented; discovery is Protocol Buffers only.
 - One capture session uses exactly one selected transport.
-- Stage 7 covers one Fire TV model and use case, not all Android TV or Fire TV devices.
-- Final `2.2.0` / TV `2200` artifact hardware validation is still pending.
+- Hardware validation covers one primary Fire TV model and use case, not all Android TV or Fire TV devices.
 - Mobile hardware validation has not been performed.
 - `targetSdk 26` is intentionally temporary; broader lifecycle modernization is Phase 4 work.
 
@@ -159,10 +168,10 @@ Stage 7 additionally validated the primary Fire TV use case on real hardware.
 
 Phase 1 established the independent package identity, modern Android build
 foundation, and reusable signing. Phase 2 delivered Hyperion NG 2.2.1 Protocol
-Buffers compatibility. Phase 3A added Protocol Buffers-only Android NSD
-discovery, while Phase 3B added the experimental FlatBuffer transport without
-removing manual configuration or the stable default. Earlier releases are kept
-in the [changelog](CHANGELOG.md).
+Buffers compatibility. Version 2.2.0 completed Phase 3: Phase 3A added Protocol
+Buffers-only Android NSD discovery, while Phase 3B added the experimental
+FlatBuffer transport without removing manual configuration or the stable
+default. Earlier releases are kept in the [changelog](CHANGELOG.md).
 
 ## License
 

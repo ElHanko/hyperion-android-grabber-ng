@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.2.0] - Unreleased
+## [2.2.0] - 2026-08-03
 
 TV versionCode: `2200`<br>
 Mobile versionCode: `1200`<br>
@@ -68,12 +68,32 @@ Release version: `2.2.0`
   requirement.
 - Mobile was not hardware-tested.
 
+#### Final 2.2.0 Fire TV release validation
+
+- Verified the exact signed TV APK with SHA-256
+  `c682160145412c5d1b7996ae4089e8a0df835b04dde5ba59fa7a232a8f3c82fd`.
+- Successfully updated `2101 / 2.1.1` to `2200 / 2.2.0` with
+  `adb install -r`; the application ID and signature remained compatible,
+  `firstInstallTime` was unchanged, and application data and settings were
+  retained.
+- Completed short Protocol Buffers and explicitly enabled FlatBuffer capture
+  regressions with responsive LED output. The active FlatBuffer status and its
+  separate port `19400` were confirmed.
+- Verified Stop/Clear for both transport paths, releasing the grabber's own
+  priority.
+- Successfully force-stopped and restarted the application. The FlatBuffer
+  selection, FlatBuffer port, and other settings remained stored, and the
+  grabber could be started and stopped again.
+- The signed Mobile APK has SHA-256
+  `1519c7defd919a4fee630a3e38f387e927b7ac3b2dcdfa5354e7edeae38d5baf`;
+  it was built and automatically tested but not hardware-validated.
+
 ### Known limitations
 
 - FlatBuffer remains experimental; Protocol Buffers remains the stable default.
 - There is no automatic transport fallback or FlatBuffer discovery.
-- Stage 7 covers one Fire TV model/use case. The final `2.2.0 / 2200` TV update
-  and Mobile hardware validation remain pending.
+- Hardware validation covers one primary Fire TV model/use case. Mobile
+  hardware validation has not been performed.
 - `targetSdk 26` remains intentionally temporary; broader lifecycle
   modernization is planned for Phase 4.
 
