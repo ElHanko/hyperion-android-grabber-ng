@@ -17,6 +17,9 @@
   <string name="guidedstep_nevermind">Never mind</string>
   <string name="guidedstep_cancel">Cancel</string>
   <string name="guidedstep_required">Required</string>
+  <string name="flatbuffer_confirmation_title">FlatBuffer is experimental</string>
+  <string name="flatbuffer_confirmation_message">FlatBuffer has no automatic fallback. If the connection fails, disable it to return to Protocol Buffers. The change takes effect the next time the grabber starts.</string>
+  <string name="flatbuffer_confirmation_enable">Enable FlatBuffer</string>
   <!--This is the title for a custom launcher activity - hence including the app's name, with the action noted (toggle the grabber)-->
   <string name="toggle_activity_label">Hyperion Grabber NG (Toggle)</string>
 </resources>

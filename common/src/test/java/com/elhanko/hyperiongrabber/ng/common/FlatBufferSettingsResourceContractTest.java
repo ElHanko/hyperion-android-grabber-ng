@@ -41,9 +41,40 @@ public class FlatBufferSettingsResourceContractTest {
         assertTrue(source.contains("ACTION_FLATBUFFER_PORT"));
         assertTrue(source.contains("CHECKBOX_CHECK_SET_ID"));
         assertTrue(source.contains("enterFlatBufferPort.isEnabled = flatBufferEnabled"));
-        assertTrue(source.contains("isEnabled = enabled"));
-        assertTrue(source.contains("HyperionTransportPreferenceBinding.persistedValue(enabled)"));
+        assertTrue(source.contains("FlatBufferTransportConfirmation.requestToggle"));
+        assertTrue(source.contains("isEnabled = state.flatBufferPortEnabled"));
+        assertTrue(source.contains("commitFlatBufferTransport"));
         assertTrue(source.contains("assertFlatBufferPortValue"));
+    }
+
+    @Test
+    public void tvRequiresConfirmationBeforePersistingFlatBuffer() throws IOException {
+        String settings = source(
+                "tv/src/main/java/com/elhanko/hyperiongrabber/ng/tv/fragments/settings/"
+                        + "BasicSettingsStepFragment.kt");
+        String state = source(
+                "tv/src/main/java/com/elhanko/hyperiongrabber/ng/tv/fragments/settings/"
+                        + "FlatBufferTransportConfirmation.kt");
+        String strings = source("tv/src/main/res/values/strings.xml");
+
+        assertTrue(settings.contains("AlertDialog.Builder"));
+        assertTrue(settings.contains("showFlatBufferConfirmation"));
+        assertTrue(settings.contains("setPositiveButton(R.string.flatbuffer_confirmation_enable"));
+        assertTrue(settings.contains("setNegativeButton(R.string.guidedstep_cancel"));
+        assertTrue(settings.contains("setOnCancelListener"));
+        assertTrue(settings.contains("setOnDismissListener"));
+        assertTrue(settings.contains("AlertDialog.BUTTON_NEGATIVE")
+                && settings.contains("requestFocus()"));
+        assertTrue(settings.contains("HyperionTransportPreferenceBinding.isFlatBufferEnabled"));
+        assertTrue(settings.contains("prefs.putString(CommonR.string.pref_key_transport, state.persistedTransport)"));
+        assertTrue(settings.contains("FlatBufferTransportConfirmation.confirmed"));
+        assertTrue(settings.contains("FlatBufferTransportConfirmation.cancelled"));
+        assertTrue(state.contains("confirmationRequired"));
+        assertFalse(state.contains("putBoolean"));
+        assertFalse(state.contains("warning_seen"));
+        assertTrue(strings.contains("FlatBuffer is experimental"));
+        assertTrue(strings.contains("no automatic fallback"));
+        assertTrue(strings.contains("next time the grabber starts"));
     }
 
     @Test

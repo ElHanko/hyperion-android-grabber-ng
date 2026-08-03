@@ -1,6 +1,7 @@
 package com.elhanko.hyperiongrabber.ng.tv.fragments.settings
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -21,6 +22,7 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
 
     /** The amount of times the connection was tested */
     private var testCounter = 0
+    private var flatBufferConfirmationDialog: AlertDialog? = null
 
     override fun onProvideTheme(): Int {
         return R.style.Theme_HyperionGrabber_GuidedStep_First
@@ -209,7 +211,8 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
             try {
                 val host = assertStringValue(ACTION_HOST_NAME)
                 val port = assertIntValue(ACTION_PORT)
-                val flatBufferEnabled = findActionById(ACTION_FLATBUFFER_TRANSPORT)!!.isChecked
+                val flatBufferEnabled = HyperionTransportPreferenceBinding.isFlatBufferEnabled(
+                        prefs.getString(CommonR.string.pref_key_transport, null))
                 val flatBufferPort = if (flatBufferEnabled) assertFlatBufferPortValue() else null
                 val xLED = assertIntValue(ACTION_X_LED_COUNT)
                 val yLED = assertIntValue(ACTION_Y_LED_COUNT)
@@ -246,18 +249,7 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
             return
 
         } else if (action.id == ACTION_FLATBUFFER_TRANSPORT) {
-            val enabled = action.isChecked
-            prefs.putString(
-                    CommonR.string.pref_key_transport,
-                    HyperionTransportPreferenceBinding.persistedValue(enabled))
-            action.description = getString(if (enabled) {
-                CommonR.string.pref_summary_flatbuffer_transport_enabled
-            } else {
-                CommonR.string.pref_summary_flatbuffer_transport_disabled
-            })
-            findActionById(ACTION_FLATBUFFER_PORT)?.isEnabled = enabled
-            notifyActionIdChanged(ACTION_FLATBUFFER_TRANSPORT)
-            notifyActionIdChanged(ACTION_FLATBUFFER_PORT)
+            handleFlatBufferTransportToggle()
             return
 
         } else if (action.id == ACTION_DISCOVER) {
@@ -297,6 +289,13 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
         }
     }
 
+    override fun onDestroy() {
+        flatBufferConfirmationDialog?.setOnDismissListener(null)
+        flatBufferConfirmationDialog?.dismiss()
+        flatBufferConfirmationDialog = null
+        super.onDestroy()
+    }
+
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         when {
             action.id == ACTION_RECONNECT -> {
@@ -329,6 +328,78 @@ internal class BasicSettingsStepFragment : SettingsStepBaseFragment() {
             throw AssertionError("FlatBuffer port is not valid")
         }
         return HyperionTransportPreferenceBinding.requireValidPort(value)
+    }
+
+    private fun handleFlatBufferTransportToggle() {
+        val flatBufferPort = prefs.getString(CommonR.string.pref_key_flatbuffer_port, null)
+        val state = FlatBufferTransportConfirmation.requestToggle(
+                prefs.getString(CommonR.string.pref_key_transport, null),
+                flatBufferPort)
+        if (state.confirmationRequired) {
+            renderFlatBufferTransport(state)
+            showFlatBufferConfirmation(flatBufferPort)
+        } else {
+            commitFlatBufferTransport(state)
+        }
+    }
+
+    private fun showFlatBufferConfirmation(flatBufferPort: String?) {
+        if (flatBufferConfirmationDialog != null) {
+            return
+        }
+        if (!isAdded || activity == null || parentFragmentManager.isStateSaved) {
+            renderFlatBufferTransport(FlatBufferTransportConfirmation.cancelled(flatBufferPort))
+            return
+        }
+
+        var confirmed = false
+        val dialog = AlertDialog.Builder(requireContext())
+                .setTitle(R.string.flatbuffer_confirmation_title)
+                .setMessage(R.string.flatbuffer_confirmation_message)
+                .setPositiveButton(R.string.flatbuffer_confirmation_enable) { _, _ ->
+                    confirmed = true
+                    commitFlatBufferTransport(FlatBufferTransportConfirmation.confirmed(flatBufferPort))
+                }
+                .setNegativeButton(R.string.guidedstep_cancel, null)
+                .create()
+        dialog.setOnCancelListener {
+            renderFlatBufferTransport(FlatBufferTransportConfirmation.cancelled(flatBufferPort))
+        }
+        dialog.setOnDismissListener {
+            if (flatBufferConfirmationDialog === dialog) {
+                flatBufferConfirmationDialog = null
+                if (!confirmed) {
+                    renderFlatBufferTransport(FlatBufferTransportConfirmation.cancelled(flatBufferPort))
+                }
+            }
+        }
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.requestFocus()
+        }
+        flatBufferConfirmationDialog = dialog
+        dialog.show()
+    }
+
+    private fun commitFlatBufferTransport(state: FlatBufferTransportConfirmation.State) {
+        prefs.putString(CommonR.string.pref_key_transport, state.persistedTransport)
+        renderFlatBufferTransport(state)
+    }
+
+    private fun renderFlatBufferTransport(state: FlatBufferTransportConfirmation.State) {
+        if (!isAdded || activity == null || isRemoving) {
+            return
+        }
+        findActionById(ACTION_FLATBUFFER_TRANSPORT)?.run {
+            isChecked = state.flatBufferEnabled
+            description = getString(if (state.flatBufferEnabled) {
+                CommonR.string.pref_summary_flatbuffer_transport_enabled
+            } else {
+                CommonR.string.pref_summary_flatbuffer_transport_disabled
+            })
+        }
+        findActionById(ACTION_FLATBUFFER_PORT)?.isEnabled = state.flatBufferPortEnabled
+        notifyActionIdChanged(ACTION_FLATBUFFER_TRANSPORT)
+        notifyActionIdChanged(ACTION_FLATBUFFER_PORT)
     }
 
     /** tries to connect to Hyperion and sets the given color for 5 seconds  */
