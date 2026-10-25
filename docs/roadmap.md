@@ -4,83 +4,83 @@
 
 The project name is **Hyperion Android Grabber NG**.
 
-**NG** stands for **Next Generation**. It describes a new technical generation
-of the existing focused application, not a broader feature set or a change in
-product purpose.
+**NG** stands for **Next Generation**. The application remains a focused screen
+grabber for Hyperion, not a general client, dashboard, or administration tool.
 
-The application continues to have three closely related responsibilities:
+Amazon Fire TV / Fire OS is the sole forward-looking development target.
+Android provides the underlying operating system and API framework; it is not
+an independent generic target. Smartphones, tablets, generic Android TV
+compatibility, and cross-platform capture frameworks are outside the scope.
 
-- capture the Android device screen;
+The application has three responsibilities:
+
+- capture the Fire TV screen;
 - transmit the captured image data reliably to Hyperion;
 - provide only the configuration, permissions, and status information required
   for that purpose.
 
-Hyperion Android Grabber NG is not intended to become a general Hyperion client,
-dashboard, administration tool, or management interface. Modernization changes
-how the application is built and maintained, not what the application is.
+The existing Mobile module remains in the repository as historical code. It is
+not an active development or future support target. Historical Mobile artifacts
+and validation records remain valid records of completed work.
+
+The documented hardware reference is Fire TV `AFTKRT`, Fire OS 8, Android API 30.
+Other Fire TV devices must not be described as supported without actual
+validation. This reference does not establish generic Android TV compatibility.
 
 ## Modernization approach
 
-The project is a comprehensive technical renovation of an older application
-whose original idea remains useful. It is comparable to renovating an old house:
-the sound foundation, working core, and original purpose are preserved, while
-obsolete, broken, or no longer maintainable surrounding components are removed.
-Their replacements must form a modern and internally consistent technical
-structure.
+Apply KISS and YAGNI: fix confirmed correctness problems first, then measure and
+make only improvements with a concrete expected benefit. Working inherited code
+may remain; age alone does not justify replacement. Use the smallest coherent
+change that meets an actual Fire TV requirement.
 
-Working components are not replaced without a clear technical reason. At the
-same time, obsolete code is not retained merely to keep an outdated architecture
-running under limited conditions, and new compatibility workarounds should not
-be layered indefinitely over old ones.
-
-This is neither a complete product rewrite nor a collection of isolated repairs.
-The result remains the same focused application, rebuilt to current technical
-standards: preserve the core, remove the obsolete, and modernize the surrounding
-structure as one coherent system.
+The independent architecture audit informs the work packages below. Completing
+them does not require a new capture engine or a comprehensive modernization of
+every component.
 
 ## Status legend
 
 | Status | Meaning |
 | --- | --- |
 | Completed | Implemented, validated to the documented extent, and released. |
-| In progress | Work is underway, but the phase has not met all completion and validation criteria. |
-| Planned | Defined future work that is not available as a completed feature. |
+| In progress | Work is underway, but the work package has not met its completion and validation criteria. |
+| Planned | Future work; implementation and validation are not complete. |
+| Conditional | Work proceeds only if measurements justify it. |
 
-## Phase overview
+## Completed phases
 
-| Phase   | Scope                                                       | Status    | Planned release |
-| ------- | ----------------------------------------------------------- | --------- | --------------- |
-| Phase 1 | Project foundation, package migration and reusable signing | Completed | 2.1.0           |
-| Phase 2 | Hyperion NG 2.2.1 Protocol Buffers compatibility            | Completed | 2.1.1           |
-| Phase 3 | Modern discovery and experimental FlatBuffer transport      | Completed | 2.2.0           |
-| Phase 4 | Android lifecycle and current capture-pipeline optimization | Planned   | 2.3.0           |
-| Phase 5 | UI modernization and localization                           | Planned   | 2.4.0           |
-| Phase 6 | Capture-engine analysis, audit and evaluation                | Planned   | No release      |
-| Phase 7 | Implementation of the Phase 6 architecture decision         | Planned   | 2.5.0 or 3.0.0  |
+| Phase | Scope | Status | Released version |
+| --- | --- | --- | --- |
+| Phase 1 | Project foundation, package migration and reusable signing | Completed | 2.1.0 |
+| Phase 2 | Hyperion NG 2.2.1 Protocol Buffers compatibility | Completed | 2.1.1 |
+| Phase 3 | Discovery and experimental FlatBuffer transport | Completed | 2.2.0 |
 
-## Version philosophy
+The Phase 1 through Phase 3 sections below preserve the historical scope,
+including Mobile artifacts and Android TV terminology. They do not extend the
+future development target beyond Fire TV.
 
-The 2.x series represents the renovation and modernization of the existing
-application and capture architecture. It preserves the original focused
-purpose, preserves working foundations where technically justified, replaces
-obsolete surrounding components, improves the existing capture pipeline, avoids
-feature bloat, and remains recognizably the renovated original application.
+## Future work overview
 
-The version boundary after the research phase is deliberate:
+| Work | Status | Goal |
+| --- | --- | --- |
+| Work Package A | Planned | Fire TV reliability and lifecycle correctness |
+| Work Package B | Planned | Measure and selectively improve capture |
+| Optional architecture decision and larger engine changes | Conditional | Address a measured requirement that targeted changes cannot reasonably meet |
 
-- `2.5.0` is possible when Phase 6 concludes that a major capture-engine
-  conversion can still be implemented within the renovated existing architecture.
-- `3.0.0` is possible when Phase 6 concludes that the technically appropriate
-  solution requires a fundamentally new capture engine.
+These work packages replace the former planned Phases 4 through 7. They do not
+imply that implementation has started.
 
-In house terms, 2.x is the complete renovation and modernization of the old
-house. Version 2.5.0 is a major conversion while the existing house remains the
-structural basis. Version 3.0.0 is the transition to a modern new house whose
-design is based on current requirements rather than historical construction.
+## Version strategy
+
+`2.2.0` remains the latest documented release and validated baseline. Future
+patch or minor versions depend on the changes actually delivered. There are no
+fixed release dates or predetermined version milestones. `3.0.0` is not a goal
+in itself and does not justify an engine rewrite.
 
 ## Phase 1 – Foundation and signed package migration
 
-**Status:** Completed  
+**Status:** Completed
+
 **Release:** 2.1.0
 
 Phase 1 established the independent technical foundation and a stable update
@@ -102,7 +102,8 @@ update chain of the new package.
 
 ## Phase 2 – Hyperion NG 2.2.1 compatibility
 
-**Status:** Completed  
+**Status:** Completed
+
 **Release:** 2.1.1
 
 Phase 2 aligned and validated the existing production transport:
@@ -283,292 +284,147 @@ was not hardware-validated.
 Phase 3 and Phase 3B are complete. Version `2.2.0` was published and tagged as
 `v2.2.0`.
 
-## Phase 4 – Android lifecycle and current capture-pipeline optimization
+## Work Package A – Fire TV reliability and lifecycle
 
-**Status:** Planned  
-**Planned release:** 2.3.0
+**Status:** Planned
 
-Phase 4 remains based on the current application and capture engine. It has two
-coordinated workstreams. The target release is planned as `2.3.0`, but it remains
-unreleased and its exact implementation has not yet started.
+### Goal and scope
 
-### Phase 4A – Android platform and lifecycle modernization
+Operate the existing Fire TV application reliably with explicit session state
+and resource ownership. Address the confirmed implementation findings and review
+platform risks in the Fire OS environments and distribution channels actually
+selected for support:
 
-The Android, Fire OS, and distribution-platform requirements current at
-implementation time will determine the exact changes. The planned scope
-includes:
+- guarantee exception-safe release of every acquired `Image`;
+- handle a system-initiated MediaProjection stop through complete session cleanup;
+- give capture resources a clear owner and close them reliably on normal stop,
+  startup failure, and system termination of capture;
+- define correct start, stop, restart, and process-recreation behavior;
+- report actual connection and reconnect state accurately;
+- register and unregister broadcasts according to the owning lifecycle;
+- review Foreground Service startup order, service types, notifications, and
+  permissions against applicable Fire OS requirements;
+- review boot entry points and background-start restrictions on Fire OS;
+- check whether exported components are actually needed;
+- review the relevant historical `release/1.1-beta_1` changes recorded in
+  [GitHub issue #1](https://github.com/ElHanko/hyperion-android-grabber-ng/issues/1).
 
-- controlled compile SDK and target SDK updates;
-- review of Android, Fire OS, and distribution-platform requirements current at
-  implementation time;
-- MediaProjection lifecycle modernization;
-- Foreground Service permissions, service types, declarations, and startup order;
-- notification channels and foreground-service notifications;
-- background-start restrictions;
-- boot entry points;
-- Quick Settings entry points;
-- exported component rules;
-- deliberate-stop behavior;
-- deterministic resource cleanup;
-- validation on Fire OS and regular Android where possible;
-- explicit review of the historical upstream `release/1.1-beta_1` branch as
-  recorded in GitHub issue `#1`.
+Historical beta changes are evidence to evaluate, not patches to copy blindly.
+Keep, replace, or discard them according to current Fire TV requirements and
+observed behavior.
 
-Historical beta changes are evidence to review. They are not patches to copy
-blindly into the current application.
+SDK increases are not automatic requirements. Do not select a new `targetSdk`
+in advance. Justify any SDK change through the supported Fire TV platform and
+chosen distribution channels, distinguishing current requirements from behavior
+that changes only with a higher target SDK.
 
-No future API level is committed in advance. This phase will not introduce
-additional background features. Obsolete lifecycle workarounds should be removed
-and replaced with one consistent lifecycle rather than surrounded with further
-workarounds.
+Fix functional UI and accessibility problems within the affected flows, including
+status, errors, D-pad interaction, and accessible control labels. Use existing
+string resources and preserve translations when updating visible text. No
+separate comprehensive UI redesign or localization phase is planned.
 
-### Phase 4B – Existing capture-pipeline optimization
+### Acceptance criteria
 
-The second workstream optimizes the current capture engine before any decision
-about a fundamental replacement. Its planned scope includes:
+- Every acquired image is released on success, frame discard, and processing
+  failure; capture resources and callbacks have a defined lifetime.
+- Repeated start, stop, and restart produce correct session state without stale
+  resources. Process recreation has a defined outcome and does not assume that
+  an old projection permission can be reused.
+- System-initiated capture termination releases resources and updates the visible
+  state correctly.
+- Reconnect uses only the selected transport, reports its actual state, and stops
+  after intentional shutdown.
+- Stop/Clear releases only the grabber's own Hyperion priority when the server is
+  reachable. An unreachable server does not prevent local cleanup.
+- Changed lifecycle and transport behavior is covered by proportionate automated
+  checks and actual Fire TV validation, with the device, Fire OS version, and
+  untested cases recorded explicitly.
+- Before release, verify that a signed in-place update preserves application
+  identity, settings, and the validated upgrade path.
 
-- establishing measurable baseline behavior before optimization;
-- decoupling screen capture from network transmission;
-- using a latest-frame strategy with no unbounded queue of stale frames;
-- retaining at most one pending current frame;
-- reducing per-frame allocations and garbage-collection pressure;
-- evaluating safe reusable frame buffers;
-- improving capture-resolution and scaling selection;
-- benchmarking RGB24 and RGB32 paths rather than assuming either is superior;
-- measuring CPU usage, memory behavior, frame-processing time, dropped frames,
-  network volume, and end-to-end response;
-- preserving transport-neutral operation for Protocol Buffers and FlatBuffer;
-- preserving intentional Stop, own-priority Clear, reconnect, orientation
-  handling, and update behavior;
-- considering black-bar handling, average-color processing, and adaptive frame
-  rates only after the core pipeline improvements are measured.
+## Work Package B – Measure and selectively improve capture
 
-Phase 4 optimizes the existing engine. It is not the phase for a fundamental
-capture-engine rewrite.
+**Status:** Planned
 
-## Phase 5 – UI modernization and localization
+### Goal and method
 
-**Status:** Planned  
-**Planned release:** 2.4.0
+Evaluate the existing pipeline using real Fire TV measurements. Start from the
+validated baseline; complete the relevant lifecycle fixes from Work Package A
+before relying on measurements affected by those fixes. Correctness fixes do
+not depend on completing a performance study.
 
-### UI modernization
+Use the smallest reproducible measurement set needed to answer a concrete
+question. As relevant, record:
 
-The UI work will present the existing functionality more clearly, using the
-Android and Android TV guidance current at implementation time. Its planned scope
-includes:
+- effective capture resolution and actual frame rate;
+- frame-processing and network-transmission times;
+- CPU and memory effects, including relevant allocations;
+- observable latency or image-quality problems.
 
-- modernized setup, settings, status, and error surfaces;
-- suitable layouts and interaction models for Mobile and TV;
-- reliable D-pad and focus navigation;
-- a consistent visual hierarchy;
-- clear discovery, connection, capture, and transport status;
-- accessible contrast and scalable text;
-- content descriptions and other accessibility improvements.
+Record the device, Fire OS version, capture configuration, and selected transport
+so that comparisons describe the same conditions. Only then implement targeted
+changes with a concrete expected benefit, such as removing unnecessary byte
+copies, correcting problematic resolution selection, or fixing a demonstrated
+resource bottleneck. Compare the result with the baseline and preserve capture
+quality, lifecycle behavior, and transport selection.
 
-No unrelated dashboard or management functionality is planned. Stable transport
-and capture layers should not be functionally changed merely to support visual
-modernization.
+An asynchronous frame sender, latest-frame queue, buffer pool, GPU scaling,
+RGB32 conversion, zero-copy pipeline, adaptive frame rate, and a new capture
+engine are not predetermined requirements. Any such change needs evidence that
+it solves a relevant problem at proportionate cost.
 
-### Localization
+### Completion criteria
 
-All user-visible text will move to Android string resources. English will remain
-the default and fallback language, with German as the first additional
-translation. By default, the application will follow the device or system
-language, and unsupported languages will fall back to English.
+Document the relevant measurements and either the demonstrated benefit of each
+selected change or why no change is justified. Add targeted checks for changed
+processing logic and validate affected behavior on Fire TV. Preserve intentional
+Stop, own-priority Clear, controlled reconnect, and the stable Protocol Buffers
+regression reference.
 
-An optional application-language setting is planned with these choices:
+A valid outcome is:
 
-- System default
-- English
-- Deutsch
+**The existing capture pipeline is sufficient; no further changes are needed.**
 
-A manual selection will persist as an application-language override. Localization
-will cover:
+## Optional – Architecture decision and larger engine changes
 
-- UI labels and settings;
-- dialogs and errors;
-- notifications and foreground-service text;
-- discovery messages;
-- connection and capture status;
-- transport warnings;
-- onboarding;
-- accessibility descriptions.
+**Status:** Conditional
 
-Protocol names, discovered server names, and developer-only technical log
-messages will not be translated. The exact implementation of the manual language
-selector may depend on the Android compatibility levels reached in Phase 4.
-Localization improves accessibility and consistency; it does not expand the
-product scope.
+Consider a larger engine change only when real measurements show that a relevant
+Fire TV requirement cannot reasonably be met with the existing architecture and
+targeted improvements. Completing Work Packages A and B does not automatically
+start a research phase or an engine rewrite.
 
-## Phase 6 – Capture-engine analysis, audit and evaluation
+Before deciding, document the unmet requirement, measured structural limitation,
+technical benefits, simpler alternatives, implementation cost, and compatibility
+risks. The following outcomes have equal standing:
 
-**Status:** Planned<br>
-**Release:** No release
+1. Retain the existing engine.
+2. Improve the existing engine selectively.
+3. Carry out a technically justified larger conversion.
 
-Phase 6 is a research and decision phase, not a production implementation
-phase. Its purpose is to determine whether the future capture engine should
-remain a major conversion of the current architecture or become a fundamentally
-new implementation.
-
-### Fixed rules
-
-Phase 6 follows these rules:
-
-- no application version change;
-- no release;
-- no production feature delivery;
-- no changes to production capture code on `main`;
-- no predetermined decision between `2.5.0` and `3.0.0`;
-- no automatic merging of prototypes;
-- no assumption that the historical grabber architecture remains the correct
-  foundation;
-- no redesign of the established Hyperion transports unless the evaluation
-  proves a necessary interface change.
-
-### Evaluation perspective
-
-The investigation must begin from:
-
-1. what Hyperion actually needs from an Android screen grabber;
-2. what current Android and Fire OS APIs can efficiently provide;
-3. the simplest maintainable architecture connecting those requirements.
-
-The old capture implementation may be used as behavioral and historical
-reference, but it must not define the new design.
-
-### Required analysis
-
-The evaluation must include:
-
-- Hyperion input requirements;
-- useful image resolution and frame-rate ranges;
-- supported and useful pixel formats;
-- latency and timeout behavior;
-- full-frame versus edge-oriented or other preprocessing strategies;
-- color-space, HDR, scaling, and black-bar considerations;
-- Android MediaProjection, VirtualDisplay, Surface, ImageReader,
-  HardwareBuffer, CPU, and GPU capabilities current at evaluation time;
-- copy-count and memory-layout analysis;
-- an audit of the optimized Phase 4 engine;
-- identification of structural limits versus fixable implementation weaknesses;
-- benchmark methodology;
-- Fire TV as the primary hardware target;
-- regular Android validation where hardware is available;
-- honest documentation of unperformed hardware coverage.
-
-### Prototype branches
-
-Phase 6 may create isolated evaluation branches for focused prototypes, such as:
-
-- `evaluation/capture-surface-pipeline`;
-- `evaluation/rgb32-pipeline`;
-- `evaluation/gpu-scaling`;
-- `evaluation/edge-sampling`;
-- `evaluation/latest-frame-alternative`.
-
-Prototypes are measurement and learning tools. They may be incomplete, are not
-release candidates, must not be merged automatically, and may be discarded
-entirely. They do not change the application version and do not make Phase 6 a
-release phase.
-
-Each evaluated approach receives one documented outcome:
-
-- `Pursue`;
-- `Reference only`;
-- `Reject`;
-- `Inconclusive`.
-
-### Required outputs
-
-Phase 6 should produce:
-
-- a Hyperion requirements analysis;
-- an Android and Fire OS capture-capabilities audit;
-- an audit of the Phase 4 capture engine;
-- reproducible benchmarks;
-- prototype findings where appropriate;
-- an architecture comparison;
-- an Architecture Decision Record;
-- a concrete implementation recommendation for Phase 7.
-
-Phase 6 has no release target.
-
-## Phase 7 – Implementation of the architecture decision
-
-**Status:** Planned<br>
-**Planned release:** 2.5.0 or 3.0.0
-
-Phase 7 is the first phase allowed to implement the fundamental architecture
-decision made in Phase 6. It must not be described as already committed to
-either outcome.
-
-### Outcome A – Major conversion within the existing architecture
-
-When Phase 6 determines that the existing modernized architecture remains a
-suitable foundation, Phase 7 will:
-
-- implement the selected capture-engine conversion;
-- retain the renovated 2.x structural foundation;
-- preserve compatible application behavior and settings where sensible;
-- target version `2.5.0`.
-
-This is a major conversion of the renovated old house rather than a new
-building.
-
-### Outcome B – Fundamentally new capture engine
-
-When Phase 6 determines that the existing architecture prevents the most
-appropriate solution, Phase 7 will:
-
-- design and implement a new capture engine;
-- derive the architecture from Hyperion requirements and current Android
-  capabilities;
-- use the old grabber only as behavioral reference;
-- reuse transports, discovery, UI, settings, signing, or other components only
-  where they remain technically suitable;
-- define migration and compatibility behavior explicitly;
-- target version `3.0.0`.
-
-Version `3.0.0` marks the new-house boundary: the application purpose remains
-focused and recognizable, but the capture foundation is newly designed.
+Make the decision before committing to a larger implementation. If a new design
+is justified, derive it from actual Fire TV requirements and platform
+capabilities rather than historical implementation choices. Reuse suitable
+components, including the established transports, instead of redesigning them
+without a demonstrated need. There is no mandatory prototype program or reserved
+release number for this work.
 
 ## Project principles
 
-- Keep the application small and focused.
-- Preserve the original purpose of capturing the Android screen for Hyperion.
-- Interpret **NG** as a new technical generation, not a broader feature set.
-- Preserve the working core and original idea.
-- Remove obsolete, broken, and unmaintainable components.
-- Do not retain obsolete code merely because it still works under limited
-  conditions.
-- Do not accumulate compatibility workarounds around outdated architecture.
-- Replace outdated surrounding structures with modern, consistent equivalents.
-- Preserve functioning components unless there is a clear technical reason to
-  replace them.
-- Maintain consistency across architecture, network transport, lifecycle, UI,
-  tests, and documentation.
-- Preserve a known-working upgrade path.
-- Keep stable functionality as the default.
-- Introduce risky protocol changes only as explicit opt-in features.
-- Keep manual configuration available unless an equivalent reliable replacement
-  exists.
-- Do not add features unrelated to screen capture and Hyperion connectivity.
-- Validate significant network and lifecycle changes with automated tests and
-  real Fire TV testing.
-- Document completed work separately from planned work.
-- Never claim hardware validation before it has actually been performed.
-- Favor maintainable and understandable solutions over unnecessary abstraction.
-- Avoid both feature bloat and endless compatibility patching.
-- Optimize the current capture engine before deciding to replace it.
-- Let measured requirements and platform capabilities guide a future engine.
-- Do not treat historical implementation choices as permanent requirements.
-- Isolate experimental prototypes from production branches.
-- Do not assign a release version to research-only work.
-- Use major version `3.0.0` only for a genuinely fundamental new capture
-  foundation.
-
-Hyperion Android Grabber NG should remain a small and focused application. Its
-modernization preserves the working core and original purpose, removes obsolete
-surrounding components, and rebuilds the technical structure to current
-standards. The result should be the same application in a modern, consistent,
-and maintainable form—not a larger or fundamentally different product.
+- Develop for Fire TV / Fire OS only; retain Mobile as historical code.
+- Apply KISS and YAGNI: keep complexity and feature scope minimal.
+- Establish correctness before optimization; prefer measured improvements over
+  speculative rewrites.
+- Preserve working components unless a demonstrated requirement justifies change;
+  code age alone is not a reason to replace them.
+- Respect Fire OS platform behavior and justify SDK changes through actual support
+  and distribution requirements.
+- Preserve application ID `com.elhanko.hyperiongrabber.ng`, signing identity,
+  settings, and the validated in-place upgrade path.
+- Keep Protocol Buffers the stable default and FlatBuffer an explicit experimental
+  opt-in unless separately qualified; do not introduce silent transport fallback.
+- Maintain explicit Stop/Clear of the grabber's own priority and controlled
+  reconnect that ends on intentional stop.
+- Preserve manual endpoint configuration and keep discovery optional.
+- Validate release-relevant behavior on Fire TV; document the tested environment
+  and never claim hardware coverage that was not performed.

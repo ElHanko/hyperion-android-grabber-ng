@@ -1,8 +1,9 @@
 # Hyperion Android Grabber NG
 
-Hyperion Android Grabber NG captures an Android screen and sends image data to a
-Hyperion server. Separate applications are provided for mobile Android devices
-and Android TV / Fire TV.
+Hyperion Android Grabber NG captures the screen of Amazon Fire TV devices and
+sends image data to a Hyperion server. Fire TV / Fire OS is the sole target
+for future development and validation. The existing Mobile module and its
+previously released APKs remain historical artifacts, not active support targets.
 
 ## Project status and fork history
 
@@ -28,7 +29,7 @@ the stable default. See the [changelog](CHANGELOG.md) and
 - RGB24 and supported four-byte RGB image transfer
 - Optional average-color mode
 - Reconnect using the selected transport only
-- Mobile and Android TV / Fire TV interfaces
+- Fire TV interface with D-pad navigation (historical Mobile module retained)
 
 FlatBuffer is experimental and is not presented as a stable or generally
 recommended replacement for Protocol Buffers.
@@ -42,7 +43,7 @@ recommended replacement for Protocol Buffers.
 | Transport | Stable Protocol Buffers ProtoServer transport with an optional experimental FlatBuffer transport |
 | `minSdk` | 21 |
 | `compileSdk` | 36 |
-| `targetSdk` | temporarily 26 |
+| `targetSdk` | 26 (released baseline; changes require Fire OS justification) |
 
 Stage 7 provided comprehensive FlatBuffer hardware validation on an Amazon Fire
 TV while the tested app still carried version `2.1.1` / TV versionCode `2101`.
@@ -65,13 +66,15 @@ The exact Protocol Buffers reference is described in the
 
 ## Installation
 
-Build the release APKs first as described in [Docker build](#docker-build). Then
-install or update them with Android Debug Bridge:
+Build the release APKs as described in [Docker build](#docker-build). To install
+or update the supported Fire TV application, use Android Debug Bridge:
 
 ```bash
 adb install -r dist/tv/tv-release.apk
-adb install -r dist/mobile/mobile-release.apk
 ```
+
+The Mobile APK is a historical artifact, not a future development or support
+target. Its existing release records remain documented above.
 
 The signed TV update path `2101 / 2.1.1 -> 2200 / 2.2.0` was successfully
 validated with `adb install -r`. The compatible signature retained the existing
@@ -97,7 +100,7 @@ Android NSD discovery changes only the Protocol Buffers host and port after an
 explicit selection. It does not enable FlatBuffer, alter the FlatBuffer port, or
 provide FlatBuffer discovery.
 
-## Android TV and Fire TV usage
+## Fire TV usage
 
 Use the D-pad to enter manual settings or start Protocol Buffers discovery. The
 FlatBuffer control is D-pad operable and has a separate port field. Enabling it
@@ -160,9 +163,9 @@ Protocol Buffers, FlatBuffer, Stop/Clear, and application-restart regressions.
 - There is no automatic transport fallback.
 - FlatBuffer discovery is not implemented; discovery is Protocol Buffers only.
 - One capture session uses exactly one selected transport.
-- Hardware validation covers one primary Fire TV model and use case, not all Android TV or Fire TV devices.
-- Mobile hardware validation has not been performed.
-- `targetSdk 26` is intentionally temporary; broader lifecycle modernization is Phase 4 work.
+- Hardware validation covers the documented Fire TV reference device only.
+- Mobile hardware validation has not been performed; Mobile is not a future support target.
+- `targetSdk 26` remains the released baseline; future changes require a concrete Fire OS or distribution need.
 
 ## Project history
 
