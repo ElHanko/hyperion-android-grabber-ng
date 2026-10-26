@@ -18,7 +18,8 @@ public class HyperionGrabberBootReceiver extends BroadcastReceiver {
                 final Intent i = new Intent(context, BootActivity.class);
                 i.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION
                         |Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
-                        |Intent.FLAG_ACTIVITY_NO_HISTORY);
+                        |Intent.FLAG_ACTIVITY_NO_HISTORY
+                        |Intent.FLAG_ACTIVITY_NEW_TASK);
 
                 context.startActivity(i);
             }
