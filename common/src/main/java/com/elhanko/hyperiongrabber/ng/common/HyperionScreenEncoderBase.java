@@ -11,6 +11,7 @@ import com.elhanko.hyperiongrabber.ng.common.network.HyperionThread;
 import com.elhanko.hyperiongrabber.ng.common.util.BorderProcessor;
 import com.elhanko.hyperiongrabber.ng.common.util.HyperionGrabberOptions;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HyperionScreenEncoderBase {
@@ -21,6 +22,7 @@ public class HyperionScreenEncoderBase {
     private final int mShutdownTimeoutMs;
     private final Handler mDisconnectHandler = new Handler(Looper.getMainLooper());
     private final AtomicBoolean mDisconnectStarted = new AtomicBoolean();
+    private final CountDownLatch mDisconnectFinished = new CountDownLatch(1);
 
     final boolean mRemoveBorders = false; // enables detecting borders for standard grabbing - disabled for now
     final boolean mAvgColor;
@@ -109,32 +111,46 @@ public class HyperionScreenEncoderBase {
                 Log.w(TAG, "Could not disconnect grabber", e);
             } finally {
                 mDisconnectHandler.removeCallbacks(disconnectRunner);
+                mDisconnectFinished.countDown();
             }
         }
     }
 
-    private void startCleanupWorker(Runnable rejectedCleanup) {
+    private void startCleanupWorker(Runnable rejectedCleanup, Runnable onStopped) {
         new Thread(() -> {
-            if (rejectedCleanup == null) {
-                clearAndDisconnectRunner.run();
-                return;
-            }
-
-            disconnectOnce();
-            Thread captureThread = mHandler.getLooper().getThread();
             boolean interrupted = false;
-            // A rejected post can leave a callback running on the quitting looper.
-            for (;;) {
-                try {
-                    captureThread.join();
-                    break;
-                } catch (InterruptedException e) {
-                    interrupted = true;
-                    Log.w(TAG, "Interrupted while waiting for capture thread to stop", e);
-                }
-            }
             try {
-                rejectedCleanup.run();
+                if (rejectedCleanup == null) {
+                    clearAndDisconnectRunner.run();
+                } else {
+                    disconnectOnce();
+                }
+                Thread captureThread = mHandler.getLooper().getThread();
+                // A rejected post can leave a callback running on the quitting looper.
+                for (;;) {
+                    try {
+                        captureThread.join();
+                        break;
+                    } catch (InterruptedException e) {
+                        interrupted = true;
+                        Log.w(TAG, "Interrupted while waiting for capture thread to stop", e);
+                    }
+                }
+                if (rejectedCleanup != null) {
+                    rejectedCleanup.run();
+                }
+                for (;;) {
+                    try {
+                        mDisconnectFinished.await();
+                        break;
+                    } catch (InterruptedException e) {
+                        interrupted = true;
+                        Log.w(TAG, "Interrupted while waiting for disconnect to finish", e);
+                    }
+                }
+                if (onStopped != null) {
+                    onStopped.run();
+                }
             } finally {
                 if (interrupted) {
                     Thread.currentThread().interrupt();
@@ -163,7 +179,7 @@ public class HyperionScreenEncoderBase {
         }
     }
 
-    void clearAndDisconnect(Runnable releaseResources) {
+    void clearAndDisconnect(Runnable releaseResources, Runnable onStopped) {
         // Closing the socket can unblock a frame before the capture handler drains.
         if (!mDisconnectHandler.postDelayed(disconnectRunner, mShutdownTimeoutMs)) {
             Log.w(TAG, "Disconnect handler rejected timeout; starting disconnect worker");
@@ -171,11 +187,11 @@ public class HyperionScreenEncoderBase {
         }
         // Keep worker startup and resource release in one accepted capture task.
         if (!mHandler.post(() -> {
-            startCleanupWorker(null);
+            startCleanupWorker(null, onStopped);
             releaseResources.run();
         })) {
             Log.w(TAG, "Capture handler rejected cleanup; waiting on cleanup worker");
-            startCleanupWorker(releaseResources);
+            startCleanupWorker(releaseResources, onStopped);
         }
     }
 

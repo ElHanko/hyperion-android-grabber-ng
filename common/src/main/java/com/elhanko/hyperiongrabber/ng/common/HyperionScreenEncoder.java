@@ -7,7 +7,6 @@ import android.hardware.display.VirtualDisplay;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.ImageReader.OnImageAvailableListener;
-import android.media.MediaCodec;
 import android.media.projection.MediaProjection;
 import android.os.Build;
 import androidx.annotation.RequiresApi;
@@ -35,17 +34,11 @@ public class HyperionScreenEncoder extends HyperionScreenEncoderBase {
                            final int shutdownTimeoutMs, final Runnable onDisplayStopped) {
         super(listener, projection, width, height, density, options, shutdownTimeoutMs);
         mOnDisplayStopped = onDisplayStopped;
-
-        try {
-            prepare();
-        } catch (MediaCodec.CodecException e) {
-            e.printStackTrace();
-        }
     }
 
     @TargetApi(Build.VERSION_CODES.M)
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    private void prepare() throws MediaCodec.CodecException {
+    void prepare() {
         if (DEBUG) Log.d(TAG, "Preparing encoder");
 
         mVirtualDisplay = mMediaProjection.createVirtualDisplay(
@@ -53,16 +46,19 @@ public class HyperionScreenEncoder extends HyperionScreenEncoderBase {
                 getGrabberWidth(), getGrabberHeight(), mDensity,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 null, mDisplayCallback, null);
+        if (mVirtualDisplay == null) {
+            throw new IllegalStateException("Could not create virtual display");
+        }
 
         setImageReader();
     }
 
     @Override
     public void stopRecording() {
-        stopRecording(null);
+        stopRecording(null, null);
     }
 
-    void stopRecording(Runnable onStopped) {
+    void stopRecording(Runnable releaseProjection, Runnable onStopped) {
         if (DEBUG) Log.i(TAG, "stopRecording Called");
         if (!mStopRequested.compareAndSet(false, true)) {
             return;
@@ -88,14 +84,14 @@ public class HyperionScreenEncoder extends HyperionScreenEncoderBase {
                 Log.w(TAG, "Could not close image reader", e);
             } finally {
                 try {
-                    if (onStopped != null) {
-                        onStopped.run();
+                    if (releaseProjection != null) {
+                        releaseProjection.run();
                     }
                 } finally {
                     mHandler.getLooper().quit();
                 }
             }
-        });
+        }, onStopped);
     }
 
     @Override

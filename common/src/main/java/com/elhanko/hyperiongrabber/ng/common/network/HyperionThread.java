@@ -109,6 +109,10 @@ public class HyperionThread extends Thread {
         return receiver;
     }
 
+    public boolean hasActiveTransport() {
+        return !stopRequested && activeTransport != null;
+    }
+
     @Override
     public void run() {
         boolean reconnectAttempt = false;

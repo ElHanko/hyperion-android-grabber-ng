@@ -19,6 +19,7 @@ import androidx.annotation.RequiresApi;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.WindowManager;
 
 import com.elhanko.hyperiongrabber.ng.common.network.HyperionThread;
@@ -46,13 +47,16 @@ public class HyperionScreenService extends Service {
     public static final String EXTRA_RESULT_CODE = BASE + "EXTRA_RESULT_CODE";
     private static final int NOTIFICATION_ID = 1;
     private static final int NOTIFICATION_EXIT_INTENT_ID = 2;
+    // Accessed on the main thread; retained until the previous cleanup has finished.
+    private static HyperionScreenService sSessionOwner;
 
     private boolean RECONNECT = false;
     private boolean hasConnected = false;
     private final AtomicBoolean mStopRequested = new AtomicBoolean();
+    private final Handler mMainHandler = new Handler(Looper.getMainLooper());
     private MediaProjectionManager mMediaProjectionManager;
     private HyperionThread mHyperionThread;
-    private static MediaProjection _mediaProjection;
+    private MediaProjection _mediaProjection;
     private Runnable mReleaseProjection;
     private int mFrameRate;
     private int mShutdownTimeoutMs;
@@ -67,36 +71,55 @@ public class HyperionScreenService extends Service {
     HyperionThreadBroadcaster mReceiver = new HyperionThreadBroadcaster() {
         @Override
         public void onConnected(String transportName) {
-            mTransportName = transportName;
-            Log.d(TAG, "CONNECTED TO HYPERION INSTANCE USING " + transportName);
-            hasConnected = true;
-            notifyActivity();
+            mMainHandler.post(() -> {
+                if (mStopRequested.get()) {
+                    return;
+                }
+                mTransportName = transportName;
+                Log.d(TAG, "CONNECTED TO HYPERION INSTANCE USING " + transportName);
+                hasConnected = true;
+                mStartError = null;
+                notifyActivity();
+            });
         }
 
         @Override
         public void onConnectionError(String transportName, java.io.IOException error) {
-            mTransportName = transportName;
-            Log.e(TAG, "COULD NOT CONNECT TO HYPERION INSTANCE USING " + transportName);
-            if (error != null) Log.e(TAG, error.getMessage(), error);
-            if (!hasConnected) {
-                mStartError = getResources().getString(R.string.error_server_unreachable);
-                haltStartup();
-            }
-            if (RECONNECT && hasConnected) {
-                Log.e(TAG, "AUTOMATIC RECONNECT ENABLED FOR " + transportName
-                        + ". CONNECTING ...");
-            } else if (!RECONNECT && hasConnected) {
-                mStartError = getResources().getString(R.string.error_connection_lost);
-                stopSelf();
-            }
-            notifyActivity();
+            mMainHandler.post(() -> {
+                if (mStopRequested.get()) {
+                    return;
+                }
+                mTransportName = transportName;
+                Log.e(TAG, "COULD NOT CONNECT TO HYPERION INSTANCE USING " + transportName);
+                if (error != null) Log.e(TAG, error.getMessage(), error);
+                if (mHyperionThread != null && mHyperionThread.hasActiveTransport()) {
+                    notifyActivity();
+                    return;
+                }
+                if (!hasConnected) {
+                    mStartError = getResources().getString(R.string.error_server_unreachable);
+                    haltStartup();
+                } else if (RECONNECT) {
+                    Log.e(TAG, "AUTOMATIC RECONNECT ENABLED FOR " + transportName
+                            + ". CONNECTING ...");
+                    notifyActivity();
+                } else {
+                    mStartError = getResources().getString(R.string.error_connection_lost);
+                    stopScreenRecord();
+                    stopSelf();
+                }
+            });
         }
 
         @Override
         public void onReceiveStatus(boolean isCapturing) {
             if (DEBUG) Log.v(TAG, "Received grabber status, notifying activity. Status: " +
                     String.valueOf(isCapturing));
-            notifyActivity();
+            mMainHandler.post(() -> {
+                if (!mStopRequested.get()) {
+                    notifyActivity();
+                }
+            });
         }
     };
 
@@ -189,13 +212,16 @@ public class HyperionScreenService extends Service {
 
             mMediaProjectionManager = (MediaProjectionManager) getSystemService(
                     Context.MEDIA_PROJECTION_SERVICE);
+            if (mMediaProjectionManager == null) {
+                Log.w(TAG, "Media projection manager unavailable");
+                return false;
+            }
             mHyperionThread = new HyperionThread(
                     mReceiver,
                     selection.transportType(),
                     selection.transportConfig(),
                     RECONNECT,
                     delay);
-            mHyperionThread.start();
             mStartError = null;
             return true;
         } catch (RuntimeException invalidConfiguration) {
@@ -214,17 +240,28 @@ public class HyperionScreenService extends Service {
         if (intent == null || intent.getAction() == null) {
             String nullItem = (intent == null ? "intent" : "action");
             if (DEBUG) Log.v(TAG, "Null " + nullItem + " provided to start command");
+            if (mHyperionThread == null) {
+                stopSelf();
+            }
         } else  {
             final String action = intent.getAction();
             if (DEBUG) Log.v(TAG, "Start command action: " + String.valueOf(action));
             switch (action) {
                 case ACTION_START:
-                    if (!mStopRequested.get() && mHyperionThread == null) {
-                        boolean isPrepared = prepared();
-                        if (isPrepared) {
-                            startScreenRecord(intent);
-                            startForeground(NOTIFICATION_ID, getNotification());
-
+                    try {
+                        startForeground(NOTIFICATION_ID, getNotification());
+                        if (mStopRequested.get()
+                                || (sSessionOwner != null && sSessionOwner != this)) {
+                            Log.w(TAG, "Previous capture session is still stopping; start rejected");
+                            haltStartup();
+                            break;
+                        }
+                        if (mHyperionThread != null) {
+                            notifyActivity();
+                            break;
+                        }
+                        sSessionOwner = this;
+                        if (prepared() && startScreenRecord(intent)) {
                             IntentFilter intentFilter = new IntentFilter();
                             intentFilter.addAction(Intent.ACTION_SCREEN_ON);
                             intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
@@ -233,23 +270,27 @@ public class HyperionScreenService extends Service {
                             intentFilter.addAction(Intent.ACTION_SHUTDOWN);
 
                             registerReceiver(mEventReceiver, intentFilter);
+                            mHyperionThread.start();
                         } else {
                             haltStartup();
                         }
+                    } catch (IllegalArgumentException | IllegalStateException
+                             | SecurityException startupFailure) {
+                        Log.e(TAG, "Could not start screen capture", startupFailure);
+                        haltStartup();
                     }
                     break;
                 case ACTION_STOP:
+                case ACTION_EXIT:
                     stopScreenRecord();
+                    stopSelf();
                     break;
                 case GET_STATUS:
                     notifyActivity();
                     break;
-                case ACTION_EXIT:
-                    stopSelf();
-                    break;
             }
         }
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     @Nullable
@@ -276,7 +317,8 @@ public class HyperionScreenService extends Service {
     }
 
     private void haltStartup() {
-        startForeground(NOTIFICATION_ID, getNotification());
+        stopScreenRecord();
+        notifyActivity();
         stopSelf();
     }
 
@@ -295,7 +337,7 @@ public class HyperionScreenService extends Service {
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void startScreenRecord(final Intent intent) {
+    private boolean startScreenRecord(final Intent intent) {
         if (DEBUG) Log.v(TAG, "Start screen recorder");
         final int resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
         // get MediaProjection
@@ -310,9 +352,7 @@ public class HyperionScreenService extends Service {
                     if (_mediaProjection != projection || mStopRequested.get()) {
                         return;
                     }
-                    if (mHyperionEncoder != null) {
-                        stopScreenRecord();
-                    }
+                    stopScreenRecord();
                     stopSelf();
                 }
             };
@@ -326,12 +366,22 @@ public class HyperionScreenService extends Service {
                     }
                 }
             };
-            projection.registerCallback(callback, new Handler(Looper.getMainLooper()));
+            projection.registerCallback(callback, mMainHandler);
         }
         WindowManager window = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         if (projection != null && window != null) {
             final DisplayMetrics metrics = new DisplayMetrics();
-            window.getDefaultDisplay().getRealMetrics(metrics);
+            Display display = window.getDefaultDisplay();
+            if (display == null) {
+                Log.w(TAG, "Default display unavailable");
+                return false;
+            }
+            display.getRealMetrics(metrics);
+            if (metrics.widthPixels <= 0 || metrics.heightPixels <= 0
+                    || metrics.densityDpi <= 0) {
+                Log.w(TAG, "Invalid display metrics");
+                return false;
+            }
             final int density = metrics.densityDpi;
             HyperionGrabberOptions options = new HyperionGrabberOptions(mHorizontalLEDCount,
                     mVerticalLEDCount, mFrameRate, mSendAverageColor);
@@ -344,8 +394,17 @@ public class HyperionScreenService extends Service {
                             stopSelf();
                         }
                     });
+            try {
+                mHyperionEncoder.prepare();
+            } catch (RuntimeException initializationFailure) {
+                Log.e(TAG, "Could not initialize capture resources", initializationFailure);
+                return false;
+            }
             mHyperionEncoder.sendStatus();
+            return true;
         }
+        Log.w(TAG, "Media projection or window manager unavailable");
+        return false;
     }
 
     private void stopScreenRecord() {
@@ -359,23 +418,65 @@ public class HyperionScreenService extends Service {
         }
         mNotificationManager.cancel(NOTIFICATION_ID);
         try {
-            if (mHyperionEncoder == null && mHyperionThread != null) {
-                mHyperionThread.shutdown();
-            }
-        } finally {
             releaseResource();
+        } finally {
+            notifyActivity();
         }
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void releaseResource() {
         _mediaProjection = null;
+        mMediaProjectionManager = null;
+        HyperionScreenEncoder encoder = mHyperionEncoder;
+        mHyperionEncoder = null;
+        HyperionThread thread = mHyperionThread;
+        mHyperionThread = null;
         Runnable releaseProjection = mReleaseProjection;
         mReleaseProjection = null;
-        if (mHyperionEncoder != null) {
-            mHyperionEncoder.stopRecording(releaseProjection);
-        } else if (releaseProjection != null) {
-            releaseProjection.run();
+        if (encoder != null) {
+            encoder.stopRecording(releaseProjection, () -> finishCleanup(thread));
+        } else {
+            // The network thread starts only after the encoder has been assigned and prepared.
+            try {
+                if (thread != null) {
+                    thread.shutdown();
+                }
+            } finally {
+                try {
+                    if (releaseProjection != null) {
+                        releaseProjection.run();
+                    }
+                } finally {
+                    finishCleanup(thread);
+                }
+            }
+        }
+    }
+
+    private void finishCleanup(HyperionThread thread) {
+        boolean interrupted = false;
+        try {
+            if (thread != null) {
+                for (;;) {
+                    try {
+                        thread.join();
+                        break;
+                    } catch (InterruptedException e) {
+                        interrupted = true;
+                        Log.w(TAG, "Interrupted while waiting for network thread to stop", e);
+                    }
+                }
+            }
+            mMainHandler.post(() -> {
+                if (sSessionOwner == this) {
+                    sSessionOwner = null;
+                }
+            });
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -384,7 +485,8 @@ public class HyperionScreenService extends Service {
     }
 
     boolean isCommunicating() {
-        return isCapturing() && hasConnected;
+        return !mStopRequested.get() && isCapturing()
+                && mHyperionThread != null && mHyperionThread.hasActiveTransport();
     }
 
     private void notifyActivity() {
