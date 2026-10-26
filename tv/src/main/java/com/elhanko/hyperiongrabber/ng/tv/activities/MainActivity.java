@@ -12,6 +12,9 @@ import android.graphics.Color;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityOptionsCompat;
@@ -30,12 +33,25 @@ import com.elhanko.hyperiongrabber.ng.common.network.transport.HyperionTransport
 import com.elhanko.hyperiongrabber.ng.common.util.Preferences;
 import com.elhanko.hyperiongrabber.ng.tv.R;
 
+import java.util.UUID;
+
 public class MainActivity extends LeanbackActivity implements ImageView.OnClickListener,
         ImageView.OnFocusChangeListener {
     public static final int REQUEST_MEDIA_PROJECTION = 1;
     public static final int REQUEST_INITIAL_SETUP = 2;
     private static final String TAG = "DEBUG";
+    private static final long START_REQUEST_TIMEOUT_MS = 10_000;
+    private static final String STATE_PERMISSION_PENDING = "projection_permission_pending";
+    private static final String STATE_START_REQUEST_ID = "start_request_id";
+    private static final String STATE_START_REQUEST_DEADLINE = "start_request_deadline";
+    // Accessed on the main thread; survives activity recreation in this process.
+    private static String sStartRequestId;
+    private static long sStartRequestDeadline;
     private boolean mRecorderRunning = false;
+    private boolean mProjectionPermissionPending = false;
+    private boolean mStatusReceiverRegistered = false;
+    private final Handler mMainHandler = new Handler(Looper.getMainLooper());
+    private Runnable mStartRequestTimeout;
     private String mActiveTransportName;
     private static MediaProjectionManager mMediaProjectionManager;
 
@@ -43,7 +59,12 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
         @Override
         public void onReceive(Context context, Intent intent) {
             boolean checked = intent.getBooleanExtra(HyperionScreenService.BROADCAST_TAG, false);
-            mRecorderRunning = checked;
+            mRecorderRunning = intent.getBooleanExtra(
+                    HyperionScreenService.BROADCAST_SESSION_ACTIVE, false);
+            if (sStartRequestId != null && sStartRequestId.equals(intent.getStringExtra(
+                    HyperionScreenService.BROADCAST_COMPLETED_START_REQUEST_ID))) {
+                clearStartRequest();
+            }
             String transportName = intent.getStringExtra(HyperionScreenService.BROADCAST_TRANSPORT);
             if (HyperionTransportStatus.connectedUsing(transportName) != null) {
                 mActiveTransportName = transportName;
@@ -61,6 +82,18 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (savedInstanceState != null) {
+            mProjectionPermissionPending = savedInstanceState.getBoolean(STATE_PERMISSION_PENDING);
+            if (sStartRequestId == null) {
+                sStartRequestId = savedInstanceState.getString(STATE_START_REQUEST_ID);
+                sStartRequestDeadline = savedInstanceState.getLong(STATE_START_REQUEST_DEADLINE);
+            }
+        }
+        if (sStartRequestId != null) {
+            mProjectionPermissionPending = false;
+        }
+        scheduleStartRequestTimeout();
 
         if (!initIfConfigured()){
             startSetup();
@@ -123,25 +156,65 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
         ib.setOnFocusChangeListener(this);
         ib.setFocusable(true);
 
-        setImageViews(mRecorderRunning, false);
+        setImageViews(false, false);
 
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                mMessageReceiver, new IntentFilter(HyperionScreenService.BROADCAST_FILTER));
-
-        // request an update on the running status
+        if (!mStatusReceiverRegistered) {
+            LocalBroadcastManager.getInstance(this).registerReceiver(
+                    mMessageReceiver, new IntentFilter(HyperionScreenService.BROADCAST_FILTER));
+            mStatusReceiverRegistered = true;
+        }
         checkForInstance();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        scheduleStartRequestTimeout();
+        if (mStatusReceiverRegistered) {
+            checkForInstance();
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(STATE_PERMISSION_PENDING, mProjectionPermissionPending);
+        outState.putString(STATE_START_REQUEST_ID, sStartRequestId);
+        outState.putLong(STATE_START_REQUEST_DEADLINE, sStartRequestDeadline);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mStartRequestTimeout != null) {
+            mMainHandler.removeCallbacks(mStartRequestTimeout);
+        }
+        if (mStatusReceiverRegistered) {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+            mStatusReceiverRegistered = false;
+        }
+        super.onDestroy();
     }
 
     @Override
     public void onClick(View view) {
         if (view.getId() == R.id.power_toggle) {
-            if (!mRecorderRunning) {
-                startActivityForResult(mMediaProjectionManager.createScreenCaptureIntent(),
-                        REQUEST_MEDIA_PROJECTION);
+            if (mProjectionPermissionPending || sStartRequestId != null
+                    || HyperionScreenService.isSessionStopping()) {
+                return;
+            }
+            // A started service may not have broadcast its session state yet.
+            if (!mRecorderRunning && !isServiceRunning()) {
+                mProjectionPermissionPending = true;
+                try {
+                    startActivityForResult(mMediaProjectionManager.createScreenCaptureIntent(),
+                            REQUEST_MEDIA_PROJECTION);
+                } catch (RuntimeException permissionFailure) {
+                    mProjectionPermissionPending = false;
+                    Log.e(TAG, "Could not request screen capture permission", permissionFailure);
+                }
             } else {
                 stopScreenRecorder();
             }
-            mRecorderRunning = !mRecorderRunning;
         } else if (view.getId() == R.id.settingsButton) {
             startSettings();
         }
@@ -175,19 +248,23 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
             return;
         }
         if (requestCode == REQUEST_MEDIA_PROJECTION) {
+            if (!mProjectionPermissionPending) {
+                return;
+            }
+            mProjectionPermissionPending = false;
             if (resultCode != Activity.RESULT_OK) {
                 Toast.makeText(this,
                         com.elhanko.hyperiongrabber.ng.common.R.string.toast_must_give_permission,
                         Toast.LENGTH_SHORT).show();
-                if (mRecorderRunning) {
-                    stopScreenRecorder();
-                }
                 setImageViews(false, true);
+                return;
+            }
+            if (data == null) {
+                Log.e(TAG, "Screen capture permission returned no data");
                 return;
             }
             Log.i(TAG, "Starting screen capture");
             startScreenRecorder(resultCode, (Intent) data.clone());
-            mRecorderRunning = true;
         }
     }
 
@@ -205,6 +282,9 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
             Intent intent = new Intent(this, HyperionScreenService.class);
             intent.setAction(HyperionScreenService.GET_STATUS);
             startService(intent);
+        } else {
+            mRecorderRunning = false;
+            setImageViews(false, false);
         }
     }
 
@@ -237,11 +317,55 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
     }
 
     public void startScreenRecorder(int resultCode, Intent data) {
-        BootActivity.startScreenRecorder(this, resultCode, data);
+        if (sStartRequestId != null) {
+            return;
+        }
+        sStartRequestId = UUID.randomUUID().toString();
+        sStartRequestDeadline = SystemClock.elapsedRealtime() + START_REQUEST_TIMEOUT_MS;
+        try {
+            data.putExtra(HyperionScreenService.EXTRA_START_REQUEST_ID, sStartRequestId);
+            data.putExtra(HyperionScreenService.EXTRA_START_REQUEST_DEADLINE,
+                    sStartRequestDeadline);
+            BootActivity.startScreenRecorder(this, resultCode, data);
+            scheduleStartRequestTimeout();
+        } catch (RuntimeException startupFailure) {
+            clearStartRequest();
+            Log.e(TAG, "Could not submit screen capture start request", startupFailure);
+        }
+    }
+
+    private void scheduleStartRequestTimeout() {
+        if (mStartRequestTimeout != null) {
+            mMainHandler.removeCallbacks(mStartRequestTimeout);
+        }
+        final String requestId = sStartRequestId;
+        if (requestId != null) {
+            mStartRequestTimeout = () -> {
+                if (requestId.equals(sStartRequestId)) {
+                    clearStartRequest();
+                    Log.w(TAG, "Screen capture start request timed out");
+                    if (mStatusReceiverRegistered) {
+                        checkForInstance();
+                    }
+                }
+            };
+            // Resuming or recreating the activity does not extend the original deadline.
+            mMainHandler.postDelayed(mStartRequestTimeout,
+                    Math.max(0, sStartRequestDeadline - SystemClock.elapsedRealtime()));
+        }
+    }
+
+    private void clearStartRequest() {
+        if (mStartRequestTimeout != null) {
+            mMainHandler.removeCallbacks(mStartRequestTimeout);
+            mStartRequestTimeout = null;
+        }
+        sStartRequestId = null;
+        sStartRequestDeadline = 0;
     }
 
     public void stopScreenRecorder() {
-        if (mRecorderRunning) {
+        if (mRecorderRunning || isServiceRunning()) {
             Intent intent = new Intent(this, HyperionScreenService.class);
             intent.setAction(HyperionScreenService.ACTION_EXIT);
             startService(intent);

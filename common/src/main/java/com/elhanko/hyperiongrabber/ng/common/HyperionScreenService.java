@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -34,8 +35,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class HyperionScreenService extends Service {
     public static final String BROADCAST_ERROR = "SERVICE_ERROR";
     public static final String BROADCAST_TAG = "SERVICE_STATUS";
+    public static final String BROADCAST_SESSION_ACTIVE = "SERVICE_SESSION_ACTIVE";
     public static final String BROADCAST_FILTER = "SERVICE_FILTER";
     public static final String BROADCAST_TRANSPORT = "SERVICE_TRANSPORT";
+    public static final String BROADCAST_COMPLETED_START_REQUEST_ID =
+            "SERVICE_COMPLETED_START_REQUEST_ID";
     private static final boolean DEBUG = false;
     private static final String TAG = "HyperionScreenService";
 
@@ -45,6 +49,8 @@ public class HyperionScreenService extends Service {
     public static final String ACTION_EXIT = BASE + "ACTION_EXIT";
     public static final String GET_STATUS = BASE + "ACTION_STATUS";
     public static final String EXTRA_RESULT_CODE = BASE + "EXTRA_RESULT_CODE";
+    public static final String EXTRA_START_REQUEST_ID = BASE + "EXTRA_START_REQUEST_ID";
+    public static final String EXTRA_START_REQUEST_DEADLINE = BASE + "EXTRA_START_REQUEST_DEADLINE";
     private static final int NOTIFICATION_ID = 1;
     private static final int NOTIFICATION_EXIT_INTENT_ID = 2;
     // Accessed on the main thread; retained until the previous cleanup has finished.
@@ -66,6 +72,8 @@ public class HyperionScreenService extends Service {
     private HyperionScreenEncoder mHyperionEncoder;
     private NotificationManager mNotificationManager;
     private String mStartError = null;
+    // Retained for status replies after activity recreation.
+    private String mCompletedStartRequestId;
     private String mTransportName = HyperionTransportType.DEFAULT.displayName();
 
     HyperionThreadBroadcaster mReceiver = new HyperionThreadBroadcaster() {
@@ -248,8 +256,16 @@ public class HyperionScreenService extends Service {
             if (DEBUG) Log.v(TAG, "Start command action: " + String.valueOf(action));
             switch (action) {
                 case ACTION_START:
+                    final String startRequestId = intent.getStringExtra(EXTRA_START_REQUEST_ID);
                     try {
                         startForeground(NOTIFICATION_ID, getNotification());
+                        if (isStartRequestExpired(intent)) {
+                            Log.w(TAG, "Expired capture start request rejected");
+                            if (mHyperionThread == null) {
+                                stopSelfResult(startId);
+                            }
+                            break;
+                        }
                         if (mStopRequested.get()
                                 || (sSessionOwner != null && sSessionOwner != this)) {
                             Log.w(TAG, "Previous capture session is still stopping; start rejected");
@@ -261,7 +277,8 @@ public class HyperionScreenService extends Service {
                             break;
                         }
                         sSessionOwner = this;
-                        if (prepared() && startScreenRecord(intent)) {
+                        if (prepared() && !isStartRequestExpired(intent)
+                                && startScreenRecord(intent)) {
                             IntentFilter intentFilter = new IntentFilter();
                             intentFilter.addAction(Intent.ACTION_SCREEN_ON);
                             intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
@@ -278,6 +295,11 @@ public class HyperionScreenService extends Service {
                              | SecurityException startupFailure) {
                         Log.e(TAG, "Could not start screen capture", startupFailure);
                         haltStartup();
+                    } finally {
+                        if (startRequestId != null) {
+                            mCompletedStartRequestId = startRequestId;
+                            notifyActivity();
+                        }
                     }
                     break;
                 case ACTION_STOP:
@@ -291,6 +313,12 @@ public class HyperionScreenService extends Service {
             }
         }
         return START_NOT_STICKY;
+    }
+
+    private boolean isStartRequestExpired(Intent intent) {
+        return intent.getStringExtra(EXTRA_START_REQUEST_ID) != null
+                && SystemClock.elapsedRealtime()
+                >= intent.getLongExtra(EXTRA_START_REQUEST_DEADLINE, 0);
     }
 
     @Nullable
@@ -484,6 +512,15 @@ public class HyperionScreenService extends Service {
         return mHyperionEncoder != null && mHyperionEncoder.isCapturing();
     }
 
+    private boolean isSessionActive() {
+        return sSessionOwner == this && !mStopRequested.get() && mHyperionEncoder != null;
+    }
+
+    // Read on the main thread, like the session owner updates.
+    public static boolean isSessionStopping() {
+        return sSessionOwner != null && sSessionOwner.mStopRequested.get();
+    }
+
     boolean isCommunicating() {
         return !mStopRequested.get() && isCapturing()
                 && mHyperionThread != null && mHyperionThread.hasActiveTransport();
@@ -492,6 +529,8 @@ public class HyperionScreenService extends Service {
     private void notifyActivity() {
         Intent intent = new Intent(BROADCAST_FILTER);
         intent.putExtra(BROADCAST_TAG, isCommunicating());
+        intent.putExtra(BROADCAST_SESSION_ACTIVE, isSessionActive());
+        intent.putExtra(BROADCAST_COMPLETED_START_REQUEST_ID, mCompletedStartRequestId);
         intent.putExtra(BROADCAST_ERROR, mStartError);
         intent.putExtra(BROADCAST_TRANSPORT, mTransportName);
         if (DEBUG) {
