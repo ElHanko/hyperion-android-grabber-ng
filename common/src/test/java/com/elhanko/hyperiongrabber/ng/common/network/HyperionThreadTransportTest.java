@@ -36,8 +36,10 @@ public class HyperionThreadTransportTest {
         HyperionThread thread = thread(
                 broadcaster, HyperionTransportType.FLATBUFFER, false, 0, creator);
         try {
+            assertFalse(thread.hasActiveTransport());
             thread.start();
             assertEquals("FlatBuffer (experimental)", broadcaster.awaitConnected());
+            assertTrue(thread.hasActiveTransport());
             assertEquals(1, creator.calls.get());
             assertSame(HyperionTransportType.FLATBUFFER, creator.types.get(0));
             assertSame(CONFIG, creator.configs.get(0));
@@ -234,9 +236,12 @@ public class HyperionThreadTransportTest {
         try {
             thread.start();
             broadcaster.awaitConnected();
+            assertTrue(thread.hasActiveTransport());
             thread.getReceiver().sendFrame(new byte[] {1, 2, 3}, 1, 1);
             broadcaster.awaitError();
             assertTrue(creator.reconnectEntered.await(2, TimeUnit.SECONDS));
+            assertFalse("A historical connection is not an active transport",
+                    thread.hasActiveTransport());
 
             for (int index = 0; index < 100; index++) {
                 thread.getReceiver().sendFrame(new byte[] {4, 5, 6}, 1, 1);
@@ -246,6 +251,7 @@ public class HyperionThreadTransportTest {
 
             creator.allowReconnect.countDown();
             broadcaster.awaitConnected();
+            assertTrue(thread.hasActiveTransport());
             assertEquals(0, replacement.imageCalls.get());
             thread.getReceiver().sendFrame(new byte[] {7, 8, 9}, 1, 1);
             assertEquals(1, replacement.imageCalls.get());
@@ -301,19 +307,26 @@ public class HyperionThreadTransportTest {
         HyperionThread thread = thread(
                 broadcaster, HyperionTransportType.PROTOBUF, true, 60_000, creator);
 
-        thread.start();
-        broadcaster.awaitConnected();
-        thread.preventReconnect();
-        thread.join(2_000);
-        assertFalse(thread.isAlive());
-        assertEquals(0, transport.closeCalls.get());
+        try {
+            thread.start();
+            broadcaster.awaitConnected();
+            thread.preventReconnect();
+            assertFalse("Stopping must hide the transport before Clear and disconnect",
+                    thread.hasActiveTransport());
+            thread.join(2_000);
+            assertFalse(thread.isAlive());
+            assertTrue(transport.isConnected());
+            assertEquals(0, transport.closeCalls.get());
 
-        thread.getReceiver().clear();
-        thread.getReceiver().disconnect();
-        thread.getReceiver().disconnect();
-        assertEquals(1, transport.clearCalls.get());
-        assertEquals(1, transport.closeCalls.get());
-        assertEquals(1, creator.calls.get());
+            thread.getReceiver().clear();
+            thread.getReceiver().disconnect();
+            thread.getReceiver().disconnect();
+            assertEquals(1, transport.clearCalls.get());
+            assertEquals(1, transport.closeCalls.get());
+            assertEquals(1, creator.calls.get());
+        } finally {
+            stop(thread);
+        }
     }
 
     @Test
@@ -354,6 +367,71 @@ public class HyperionThreadTransportTest {
         assertEquals(1, late.closeCalls.get());
         assertEquals(0, broadcaster.connected.size());
         assertEquals(0, broadcaster.errors.size());
+    }
+
+    @Test
+    public void lateFactoryFailureAfterStopIsNotReportedOrRetried() throws Exception {
+        FakeBroadcaster broadcaster = new FakeBroadcaster();
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch allowFailure = new CountDownLatch(1);
+        AtomicInteger attempts = new AtomicInteger();
+        HyperionThread thread = thread(
+                broadcaster, HyperionTransportType.FLATBUFFER, true, 0, (type, config) -> {
+                    attempts.incrementAndGet();
+                    entered.countDown();
+                    try {
+                        allowFailure.await();
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                        throw new IOException(interrupted);
+                    }
+                    throw new IOException("Connection failed after stop");
+                });
+        try {
+            thread.start();
+            assertTrue(entered.await(2, TimeUnit.SECONDS));
+            thread.shutdown();
+            allowFailure.countDown();
+            thread.join(2_000);
+
+            assertFalse(thread.isAlive());
+            assertFalse(thread.hasActiveTransport());
+            assertEquals(1, attempts.get());
+            assertTrue(broadcaster.errors.isEmpty());
+            assertTrue(broadcaster.connected.isEmpty());
+        } finally {
+            allowFailure.countDown();
+            stop(thread);
+        }
+    }
+
+    @Test
+    public void completedShutdownIgnoresFurtherFramesClearAndDisconnect() throws Exception {
+        FakeBroadcaster broadcaster = new FakeBroadcaster();
+        FakeTransport transport = new FakeTransport("Protocol Buffers");
+        RecordingCreator creator = new RecordingCreator(transport);
+        HyperionThread thread = thread(
+                broadcaster, HyperionTransportType.PROTOBUF, true, 0, creator);
+        try {
+            thread.start();
+            broadcaster.awaitConnected();
+            stop(thread);
+
+            thread.getReceiver().sendFrame(new byte[] {1, 2, 3}, 1, 1);
+            thread.getReceiver().clear();
+            thread.getReceiver().disconnect();
+
+            assertFalse(thread.hasActiveTransport());
+            assertEquals(0, transport.imageCalls.get());
+            assertEquals(0, transport.clearCalls.get());
+            assertEquals(1, transport.closeCalls.get());
+            assertEquals(1, transport.closeInvocations.get());
+            assertEquals(1, creator.calls.get());
+            assertTrue(broadcaster.errors.isEmpty());
+            assertEquals(1, broadcaster.connected.size());
+        } finally {
+            stop(thread);
+        }
     }
 
     @Test
@@ -582,6 +660,7 @@ public class HyperionThreadTransportTest {
         final AtomicInteger imageCalls = new AtomicInteger();
         final AtomicInteger clearCalls = new AtomicInteger();
         final AtomicInteger closeCalls = new AtomicInteger();
+        final AtomicInteger closeInvocations = new AtomicInteger();
         volatile boolean connected = true;
         volatile boolean clearMarksNotReady;
         volatile IOException imageFailure;
@@ -650,6 +729,7 @@ public class HyperionThreadTransportTest {
 
         @Override
         public void close() {
+            closeInvocations.incrementAndGet();
             if (connected || closeCalls.get() == 0) {
                 closeCalls.incrementAndGet();
             }
