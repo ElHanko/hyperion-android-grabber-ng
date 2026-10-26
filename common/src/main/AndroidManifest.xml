@@ -14,7 +14,7 @@
         android:supportsRtl="true">
         <service
             android:name="com.elhanko.hyperiongrabber.ng.common.HyperionScreenService"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="com.elhanko.hyperiongrabber.ng.common.HyperionScreenService" />
@@ -27,14 +27,14 @@
 
         <receiver
             android:name=".HyperionGrabberBootReceiver"
-            android:exported="true"
+            android:exported="false"
             android:label="HyperionGrabberBootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 
-        <activity android:name=".BootActivity" android:theme="@style/Theme.Transparent" android:exported="true"/>
+        <activity android:name=".BootActivity" android:theme="@style/Theme.Transparent" android:exported="false"/>
     </application>
 
 </manifest>

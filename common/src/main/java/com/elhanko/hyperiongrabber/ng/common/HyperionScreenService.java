@@ -309,6 +309,10 @@ public class HyperionScreenService extends Service {
                     break;
                 case GET_STATUS:
                     notifyActivity();
+                    // Preserve session ownership during startup and asynchronous cleanup.
+                    if (mHyperionThread == null && sSessionOwner != this) {
+                        stopSelfResult(startId);
+                    }
                     break;
             }
         }

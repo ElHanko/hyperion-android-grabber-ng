@@ -40,7 +40,7 @@
 
         <activity
             android:name=".activities.NetworkScanActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/MyOnboardingTheme" />
         <activity
             android:name=".activities.ManualSetupActivity"
