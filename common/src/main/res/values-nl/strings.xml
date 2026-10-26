@@ -51,4 +51,5 @@
   <string name="notification_description">Scherminhoud wordt doorgestuurd</string>
   <string name="pref_title_use_avg_color">Stuur Gemiddelde Schermkleur</string>
   <string name="pref_summary_use_avg_color">Stuurt de gemiddelde kleur van het scherm in plaats van een beeld van het</string>
+  <string name="error_capture_start_failed">De schermopname kon niet worden gestart. Probeer het opnieuw.</string>
 </resources>

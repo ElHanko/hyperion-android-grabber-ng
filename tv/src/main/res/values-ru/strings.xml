@@ -9,4 +9,6 @@
   <string name="guidedstep_continue">Продолжать</string>
   <string name="guidedstep_cancel">Отмена</string>
   <string name="guidedstep_required">Требуется</string>
+  <string name="action_start_capture">Начать захват экрана</string>
+  <string name="action_stop_capture">Остановить захват экрана</string>
 </resources>

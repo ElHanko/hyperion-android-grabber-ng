@@ -22,4 +22,6 @@
   <string name="flatbuffer_confirmation_enable">Enable FlatBuffer</string>
   <!--This is the title for a custom launcher activity - hence including the app's name, with the action noted (toggle the grabber)-->
   <string name="toggle_activity_label">Hyperion Grabber NG (Toggle)</string>
+  <string name="action_start_capture">Start screen capture</string>
+  <string name="action_stop_capture">Stop screen capture</string>
 </resources>

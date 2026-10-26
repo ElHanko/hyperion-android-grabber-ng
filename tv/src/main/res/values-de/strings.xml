@@ -19,4 +19,6 @@
   <string name="guidedstep_required">Benötigt</string>
   <!--This is the title for a custom launcher activity - hence including the app's name, with the action noted (toggle the grabber)-->
   <string name="toggle_activity_label">Hyperion Grabber NG (Umschalten)</string>
+  <string name="action_start_capture">Bildschirmaufnahme starten</string>
+  <string name="action_stop_capture">Bildschirmaufnahme stoppen</string>
 </resources>

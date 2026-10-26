@@ -11,4 +11,6 @@
   <string name="guidedstep_continue">Continuar</string>
   <string name="guidedstep_nevermind">No importa</string>
   <string name="guidedstep_cancel">Cancelar</string>
+  <string name="action_start_capture">Iniciar captura de pantalla</string>
+  <string name="action_stop_capture">Detener captura de pantalla</string>
 </resources>

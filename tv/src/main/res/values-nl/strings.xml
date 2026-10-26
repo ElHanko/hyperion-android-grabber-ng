@@ -17,4 +17,6 @@
   <string name="guidedstep_nevermind">Laat maar</string>
   <string name="guidedstep_cancel">Annuleren</string>
   <string name="guidedstep_required">Vereist</string>
+  <string name="action_start_capture">Schermopname starten</string>
+  <string name="action_stop_capture">Schermopname stoppen</string>
 </resources>

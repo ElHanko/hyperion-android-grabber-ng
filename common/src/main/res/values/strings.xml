@@ -75,4 +75,5 @@
   <string name="notification_description">Currently grabbing screen content</string>
   <string name="pref_title_use_avg_color">Send Average Screen Color</string>
   <string name="pref_summary_use_avg_color">Sends the average color of your device\'s screen rather than an image of it</string>
+  <string name="error_capture_start_failed">Screen capture could not be started. Please try again.</string>
 </resources>

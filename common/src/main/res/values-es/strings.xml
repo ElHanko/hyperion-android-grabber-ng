@@ -26,4 +26,5 @@
   <string name="error_empty_host">La configuración del host no debe estar vacía</string>
   <string name="error_empty_port">El puerto no debe estar vacío</string>
   <string name="toast_must_give_permission">Permiso debe concederse a la pantalla de registro de datos</string>
+  <string name="error_capture_start_failed">No se pudo iniciar la captura de pantalla. Inténtalo de nuevo.</string>
 </resources>

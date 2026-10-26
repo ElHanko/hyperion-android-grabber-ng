@@ -17,4 +17,6 @@
   <string name="guidedstep_nevermind">Nevadí</string>
   <string name="guidedstep_cancel">Zrušit</string>
   <string name="guidedstep_required">Vyžadováno</string>
+  <string name="action_start_capture">Spustit snímání obrazovky</string>
+  <string name="action_stop_capture">Zastavit snímání obrazovky</string>
 </resources>

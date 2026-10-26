@@ -51,4 +51,5 @@
   <string name="notification_description">Acquisizione schermo in corso</string>
   <string name="pref_title_use_avg_color">Invia il colore medio dello schermo</string>
   <string name="pref_summary_use_avg_color">Invia il colore medio dello schermo del tuo dispositivo piuttosto che un\'immagine di esso</string>
+  <string name="error_capture_start_failed">Impossibile avviare l\'acquisizione dello schermo. Riprova.</string>
 </resources>

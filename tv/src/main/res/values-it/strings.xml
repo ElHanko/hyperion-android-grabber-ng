@@ -17,4 +17,6 @@
   <string name="guidedstep_nevermind">Non importa</string>
   <string name="guidedstep_cancel">Annulla</string>
   <string name="guidedstep_required">Obbligatorio</string>
+  <string name="action_start_capture">Avvia acquisizione dello schermo</string>
+  <string name="action_stop_capture">Interrompi acquisizione dello schermo</string>
 </resources>

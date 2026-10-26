@@ -17,4 +17,6 @@
   <string name="guidedstep_nevermind">Cela ne fait rien</string>
   <string name="guidedstep_cancel">Annuler</string>
   <string name="guidedstep_required">Obligatoire</string>
+  <string name="action_start_capture">Démarrer la capture de l\'écran</string>
+  <string name="action_stop_capture">Arrêter la capture de l\'écran</string>
 </resources>

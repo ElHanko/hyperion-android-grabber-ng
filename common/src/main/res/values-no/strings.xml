@@ -51,4 +51,5 @@
   <string name="notification_description">Fanger innholdet på skjermen</string>
   <string name="pref_title_use_avg_color">Send gjennomsnittlig skjermfarge</string>
   <string name="pref_summary_use_avg_color">Sender gjennomsnittsfargen i enhetens skjerm i stedet for et bilde av det</string>
+  <string name="error_capture_start_failed">Kunne ikke starte skjermopptak. Prøv igjen.</string>
 </resources>

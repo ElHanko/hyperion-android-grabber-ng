@@ -30,10 +30,12 @@ import com.elhanko.hyperiongrabber.ng.common.util.HyperionGrabberOptions;
 import com.elhanko.hyperiongrabber.ng.common.util.Preferences;
 
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HyperionScreenService extends Service {
     public static final String BROADCAST_ERROR = "SERVICE_ERROR";
+    public static final String BROADCAST_ERROR_ID = "SERVICE_ERROR_ID";
     public static final String BROADCAST_TAG = "SERVICE_STATUS";
     public static final String BROADCAST_SESSION_ACTIVE = "SERVICE_SESSION_ACTIVE";
     public static final String BROADCAST_FILTER = "SERVICE_FILTER";
@@ -72,6 +74,7 @@ public class HyperionScreenService extends Service {
     private HyperionScreenEncoder mHyperionEncoder;
     private NotificationManager mNotificationManager;
     private String mStartError = null;
+    private String mErrorId;
     // Retained for status replies after activity recreation.
     private String mCompletedStartRequestId;
     private String mTransportName = HyperionTransportType.DEFAULT.displayName();
@@ -86,7 +89,7 @@ public class HyperionScreenService extends Service {
                 mTransportName = transportName;
                 Log.d(TAG, "CONNECTED TO HYPERION INSTANCE USING " + transportName);
                 hasConnected = true;
-                mStartError = null;
+                setStartError(null);
                 notifyActivity();
             });
         }
@@ -105,14 +108,14 @@ public class HyperionScreenService extends Service {
                     return;
                 }
                 if (!hasConnected) {
-                    mStartError = getResources().getString(R.string.error_server_unreachable);
+                    setStartError(getResources().getString(R.string.error_server_unreachable));
                     haltStartup();
                 } else if (RECONNECT) {
                     Log.e(TAG, "AUTOMATIC RECONNECT ENABLED FOR " + transportName
                             + ". CONNECTING ...");
                     notifyActivity();
                 } else {
-                    mStartError = getResources().getString(R.string.error_connection_lost);
+                    setStartError(getResources().getString(R.string.error_connection_lost));
                     stopScreenRecord();
                     stopSelf();
                 }
@@ -214,7 +217,7 @@ public class HyperionScreenService extends Service {
             RECONNECT = prefs.getBoolean(R.string.pref_key_reconnect);
             int delay = prefs.getInt(R.string.pref_key_reconnect_delay);
             if (mHorizontalLEDCount <= 0 || mVerticalLEDCount <= 0) {
-                mStartError = getResources().getString(R.string.error_invalid_led_counts);
+                setStartError(getResources().getString(R.string.error_invalid_led_counts));
                 return false;
             }
 
@@ -230,12 +233,12 @@ public class HyperionScreenService extends Service {
                     selection.transportConfig(),
                     RECONNECT,
                     delay);
-            mStartError = null;
+            setStartError(null);
             return true;
         } catch (RuntimeException invalidConfiguration) {
             Log.e(TAG, "INVALID " + mTransportName + " STARTUP CONFIGURATION",
                     invalidConfiguration);
-            mStartError = getResources().getString(R.string.error_server_unreachable);
+            setStartError(getResources().getString(R.string.error_server_unreachable));
             return false;
         }
     }
@@ -349,6 +352,9 @@ public class HyperionScreenService extends Service {
     }
 
     private void haltStartup() {
+        if (mStartError == null) {
+            setStartError(getString(R.string.error_capture_start_failed));
+        }
         stopScreenRecord();
         notifyActivity();
         stopSelf();
@@ -530,12 +536,20 @@ public class HyperionScreenService extends Service {
                 && mHyperionThread != null && mHyperionThread.hasActiveTransport();
     }
 
+    private void setStartError(String error) {
+        if (!Objects.equals(mStartError, error)) {
+            mStartError = error;
+            mErrorId = error == null ? null : UUID.randomUUID().toString();
+        }
+    }
+
     private void notifyActivity() {
         Intent intent = new Intent(BROADCAST_FILTER);
         intent.putExtra(BROADCAST_TAG, isCommunicating());
         intent.putExtra(BROADCAST_SESSION_ACTIVE, isSessionActive());
         intent.putExtra(BROADCAST_COMPLETED_START_REQUEST_ID, mCompletedStartRequestId);
         intent.putExtra(BROADCAST_ERROR, mStartError);
+        intent.putExtra(BROADCAST_ERROR_ID, mErrorId);
         intent.putExtra(BROADCAST_TRANSPORT, mTransportName);
         if (DEBUG) {
             Log.v(TAG, "Sending status broadcast - communicating: " +

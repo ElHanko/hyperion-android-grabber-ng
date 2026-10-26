@@ -53,9 +53,10 @@ public class HyperionNotification {
 
     public Notification buildNotification() {
         PendingIntent pIntent = null;
-        Intent intent = mContext.getPackageManager().getLaunchIntentForPackage(mContext.getPackageName());
+        Intent intent = mContext.getPackageManager()
+                .getLeanbackLaunchIntentForPackage(mContext.getPackageName());
         if (intent != null) {
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             pIntent = PendingIntent.getActivity(mContext, PENDING_INTENT_REQUEST_CODE,
                     intent, PendingIntent.FLAG_UPDATE_CURRENT);
         }

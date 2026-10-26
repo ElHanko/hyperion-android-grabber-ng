@@ -17,4 +17,6 @@
   <string name="guidedstep_nevermind">Glem det</string>
   <string name="guidedstep_cancel">Avbryt</string>
   <string name="guidedstep_required">Påkrevd</string>
+  <string name="action_start_capture">Start skjermopptak</string>
+  <string name="action_stop_capture">Stopp skjermopptak</string>
 </resources>

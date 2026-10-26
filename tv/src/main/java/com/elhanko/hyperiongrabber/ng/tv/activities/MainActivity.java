@@ -44,9 +44,11 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
     private static final String STATE_PERMISSION_PENDING = "projection_permission_pending";
     private static final String STATE_START_REQUEST_ID = "start_request_id";
     private static final String STATE_START_REQUEST_DEADLINE = "start_request_deadline";
+    private static final String STATE_LAST_SHOWN_ERROR_ID = "last_shown_error_id";
     // Accessed on the main thread; survives activity recreation in this process.
     private static String sStartRequestId;
     private static long sStartRequestDeadline;
+    private static String sLastShownErrorId;
     private boolean mRecorderRunning = false;
     private boolean mProjectionPermissionPending = false;
     private boolean mStatusReceiverRegistered = false;
@@ -70,7 +72,10 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
                 mActiveTransportName = transportName;
             }
             String error = intent.getStringExtra(HyperionScreenService.BROADCAST_ERROR);
-            if (error != null) {
+            String errorId = intent.getStringExtra(HyperionScreenService.BROADCAST_ERROR_ID);
+            if (error != null && !error.trim().isEmpty()
+                    && errorId != null && !errorId.equals(sLastShownErrorId)) {
+                sLastShownErrorId = errorId;
                 Toast.makeText(getBaseContext(),
                         HyperionTransportStatus.formatError(transportName, error),
                         Toast.LENGTH_SHORT).show();
@@ -84,6 +89,9 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
         super.onCreate(savedInstanceState);
 
         if (savedInstanceState != null) {
+            if (sLastShownErrorId == null) {
+                sLastShownErrorId = savedInstanceState.getString(STATE_LAST_SHOWN_ERROR_ID);
+            }
             mProjectionPermissionPending = savedInstanceState.getBoolean(STATE_PERMISSION_PENDING);
             if (sStartRequestId == null) {
                 sStartRequestId = savedInstanceState.getString(STATE_START_REQUEST_ID);
@@ -177,6 +185,7 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+        outState.putString(STATE_LAST_SHOWN_ERROR_ID, sLastShownErrorId);
         outState.putBoolean(STATE_PERMISSION_PENDING, mProjectionPermissionPending);
         outState.putString(STATE_START_REQUEST_ID, sStartRequestId);
         outState.putLong(STATE_START_REQUEST_DEADLINE, sStartRequestDeadline);
@@ -211,6 +220,7 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
                 } catch (RuntimeException permissionFailure) {
                     mProjectionPermissionPending = false;
                     Log.e(TAG, "Could not request screen capture permission", permissionFailure);
+                    showCaptureStartError();
                 }
             } else {
                 stopScreenRecorder();
@@ -261,11 +271,18 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
             }
             if (data == null) {
                 Log.e(TAG, "Screen capture permission returned no data");
+                showCaptureStartError();
                 return;
             }
             Log.i(TAG, "Starting screen capture");
             startScreenRecorder(resultCode, (Intent) data.clone());
         }
+    }
+
+    private void showCaptureStartError() {
+        Toast.makeText(this,
+                com.elhanko.hyperiongrabber.ng.common.R.string.error_capture_start_failed,
+                Toast.LENGTH_SHORT).show();
     }
 
     private void startSettings() {
@@ -289,6 +306,8 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
     }
 
     private void setImageViews(boolean running, boolean animated) {
+        findViewById(R.id.power_toggle).setContentDescription(getString(mRecorderRunning
+                ? R.string.action_stop_capture : R.string.action_start_capture));
         View rainbow = findViewById(R.id.sweepGradientView);
         TextView message = findViewById(R.id.grabberStartedText);
         String transportStatus = HyperionTransportStatus.connectedUsing(mActiveTransportName);
@@ -331,6 +350,7 @@ public class MainActivity extends LeanbackActivity implements ImageView.OnClickL
         } catch (RuntimeException startupFailure) {
             clearStartRequest();
             Log.e(TAG, "Could not submit screen capture start request", startupFailure);
+            showCaptureStartError();
         }
     }
 
