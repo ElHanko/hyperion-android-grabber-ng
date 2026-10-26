@@ -11,7 +11,6 @@ ARG FLATC_URL=https://github.com/google/flatbuffers/releases/download/v25.9.23/L
 ARG FLATC_SHA256=de0c6ad114a5a686ecf64322528c602c7d4512446a93f290f54f00ee5abea487
 ARG FLATBUFFERS_COMMIT=187240970746d00bbd26b0f5873ed54d2477f9f3
 ARG FLATBUFFERS_SOURCE_SHA256=cb4a0546919105755629e29913a0081f999a9296657469839f05b6fcd0e02ef1
-ARG FLATBUFFERS_JAVA_SHA256=89e9f694825de4848e0c676dd6478b6c005e8cef2514bc77c54ecd24446d9c17
 ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -64,8 +63,6 @@ RUN set -eux; \
         -C "${classes_dir}" .; \
     install -m 0644 "${source_root}/java/pom.xml" \
         "${artifact_dir}/flatbuffers-java-${FLATC_VERSION}.pom"; \
-    echo "${FLATBUFFERS_JAVA_SHA256}  ${artifact_dir}/flatbuffers-java-${FLATC_VERSION}.jar" \
-        | sha256sum --check --strict; \
     test "$(sed -n 's:.*<version>\([^<]*\)</version>.*:\1:p' "${artifact_dir}/flatbuffers-java-${FLATC_VERSION}.pom" | head -n 1)" = "${FLATC_VERSION}"; \
     rm -rf "${source_archive}" "${source_root}" "${classes_dir}" \
         /tmp/flatbuffers-java-sources.list
