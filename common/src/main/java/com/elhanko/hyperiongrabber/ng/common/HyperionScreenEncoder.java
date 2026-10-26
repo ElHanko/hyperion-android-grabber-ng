@@ -26,13 +26,15 @@ public class HyperionScreenEncoder extends HyperionScreenEncoderBase {
     private static final boolean DEBUG = false;
     private VirtualDisplay mVirtualDisplay;
     private volatile ImageReader mImageReader;
+    private final Runnable mOnDisplayStopped;
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     HyperionScreenEncoder(final HyperionThread.HyperionThreadListener listener,
                            final MediaProjection projection, final int width, final int height,
                            final int density, HyperionGrabberOptions options,
-                           final int shutdownTimeoutMs) {
+                           final int shutdownTimeoutMs, final Runnable onDisplayStopped) {
         super(listener, projection, width, height, density, options, shutdownTimeoutMs);
+        mOnDisplayStopped = onDisplayStopped;
 
         try {
             prepare();
@@ -156,6 +158,9 @@ public class HyperionScreenEncoder extends HyperionScreenEncoderBase {
             if (DEBUG) Log.d("DEBUG", "HyperionScreenEncoder.displayCallback.onStopped triggered");
             super.onStopped();
             setCapturing(false);
+            if (!mStopRequested.get()) {
+                mOnDisplayStopped.run();
+            }
         }
     };
 

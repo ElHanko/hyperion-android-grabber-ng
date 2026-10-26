@@ -11,7 +11,9 @@ import android.content.IntentFilter;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -51,6 +53,7 @@ public class HyperionScreenService extends Service {
     private MediaProjectionManager mMediaProjectionManager;
     private HyperionThread mHyperionThread;
     private static MediaProjection _mediaProjection;
+    private Runnable mReleaseProjection;
     private int mFrameRate;
     private int mShutdownTimeoutMs;
     private int mHorizontalLEDCount;
@@ -297,9 +300,36 @@ public class HyperionScreenService extends Service {
         final int resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
         // get MediaProjection
         final MediaProjection projection = mMediaProjectionManager.getMediaProjection(resultCode, intent);
+        if (projection != null) {
+            _mediaProjection = projection;
+            AtomicBoolean projectionStopped = new AtomicBoolean();
+            MediaProjection.Callback callback = new MediaProjection.Callback() {
+                @Override
+                public void onStop() {
+                    projectionStopped.set(true);
+                    if (_mediaProjection != projection || mStopRequested.get()) {
+                        return;
+                    }
+                    if (mHyperionEncoder != null) {
+                        stopScreenRecord();
+                    }
+                    stopSelf();
+                }
+            };
+            mReleaseProjection = () -> {
+                projection.unregisterCallback(callback);
+                if (!projectionStopped.get()) {
+                    try {
+                        projection.stop();
+                    } catch (RuntimeException e) {
+                        Log.w(TAG, "Could not stop media projection", e);
+                    }
+                }
+            };
+            projection.registerCallback(callback, new Handler(Looper.getMainLooper()));
+        }
         WindowManager window = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         if (projection != null && window != null) {
-            _mediaProjection = projection;
             final DisplayMetrics metrics = new DisplayMetrics();
             window.getDefaultDisplay().getRealMetrics(metrics);
             final int density = metrics.densityDpi;
@@ -308,7 +338,12 @@ public class HyperionScreenService extends Service {
             if (DEBUG) Log.v(TAG, "Starting the recorder");
             mHyperionEncoder = new HyperionScreenEncoder(mHyperionThread.getReceiver(),
                     projection, metrics.widthPixels, metrics.heightPixels,
-                    density, options, mShutdownTimeoutMs);
+                    density, options, mShutdownTimeoutMs, () -> {
+                        if (_mediaProjection == projection && !mStopRequested.get()) {
+                            stopScreenRecord();
+                            stopSelf();
+                        }
+                    });
             mHyperionEncoder.sendStatus();
         }
     }
@@ -334,20 +369,12 @@ public class HyperionScreenService extends Service {
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void releaseResource() {
-        MediaProjection projection = _mediaProjection;
         _mediaProjection = null;
-        Runnable releaseProjection = () -> {
-            if (projection != null) {
-                try {
-                    projection.stop();
-                } catch (RuntimeException e) {
-                    Log.w(TAG, "Could not stop media projection", e);
-                }
-            }
-        };
+        Runnable releaseProjection = mReleaseProjection;
+        mReleaseProjection = null;
         if (mHyperionEncoder != null) {
             mHyperionEncoder.stopRecording(releaseProjection);
-        } else {
+        } else if (releaseProjection != null) {
             releaseProjection.run();
         }
     }
