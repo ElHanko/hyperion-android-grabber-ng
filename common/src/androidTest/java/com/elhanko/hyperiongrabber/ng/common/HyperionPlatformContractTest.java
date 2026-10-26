@@ -74,7 +74,7 @@ public class HyperionPlatformContractTest {
     @SdkSuppress(minSdkVersion = 29)
     public void captureServiceDeclaresMediaProjectionType() throws Exception {
         assertEquals(ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION,
-                serviceInfo().foregroundServiceType);
+                serviceInfo().getForegroundServiceType());
     }
 
     @Test
