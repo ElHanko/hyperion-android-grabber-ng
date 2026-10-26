@@ -26,6 +26,7 @@ import com.elhanko.hyperiongrabber.ng.common.util.HyperionGrabberOptions;
 import com.elhanko.hyperiongrabber.ng.common.util.Preferences;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HyperionScreenService extends Service {
     public static final String BROADCAST_ERROR = "SERVICE_ERROR";
@@ -46,10 +47,12 @@ public class HyperionScreenService extends Service {
 
     private boolean RECONNECT = false;
     private boolean hasConnected = false;
+    private final AtomicBoolean mStopRequested = new AtomicBoolean();
     private MediaProjectionManager mMediaProjectionManager;
     private HyperionThread mHyperionThread;
     private static MediaProjection _mediaProjection;
     private int mFrameRate;
+    private int mShutdownTimeoutMs;
     private int mHorizontalLEDCount;
     private int mVerticalLEDCount;
     private boolean mSendAverageColor;
@@ -167,6 +170,8 @@ public class HyperionScreenService extends Service {
                     priority,
                     1_000,
                     2_000);
+            // Reuse the transport read timeout as the best-effort Clear budget.
+            mShutdownTimeoutMs = selection.transportConfig().readTimeoutMs();
 
             mFrameRate = prefs.getInt(R.string.pref_key_framerate);
             mHorizontalLEDCount = prefs.getInt(R.string.pref_key_x_led);
@@ -211,7 +216,7 @@ public class HyperionScreenService extends Service {
             if (DEBUG) Log.v(TAG, "Start command action: " + String.valueOf(action));
             switch (action) {
                 case ACTION_START:
-                    if (mHyperionThread == null) {
+                    if (!mStopRequested.get() && mHyperionThread == null) {
                         boolean isPrepared = prepared();
                         if (isPrepared) {
                             startScreenRecord(intent);
@@ -303,32 +308,47 @@ public class HyperionScreenService extends Service {
             if (DEBUG) Log.v(TAG, "Starting the recorder");
             mHyperionEncoder = new HyperionScreenEncoder(mHyperionThread.getReceiver(),
                     projection, metrics.widthPixels, metrics.heightPixels,
-                    density, options);
+                    density, options, mShutdownTimeoutMs);
             mHyperionEncoder.sendStatus();
         }
     }
 
     private void stopScreenRecord() {
         if (DEBUG) Log.v(TAG, "Stop screen recorder");
+        if (!mStopRequested.compareAndSet(false, true)) {
+            return;
+        }
         RECONNECT = false;
         if (mHyperionThread != null) {
             mHyperionThread.preventReconnect();
         }
         mNotificationManager.cancel(NOTIFICATION_ID);
-        if (mHyperionEncoder != null) {
-            if (DEBUG) Log.v(TAG, "Stopping the current encoder");
-            mHyperionEncoder.stopRecording();
-        } else if (mHyperionThread != null) {
-            mHyperionThread.shutdown();
+        try {
+            if (mHyperionEncoder == null && mHyperionThread != null) {
+                mHyperionThread.shutdown();
+            }
+        } finally {
+            releaseResource();
         }
-        releaseResource();
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void releaseResource() {
-        if (_mediaProjection != null) {
-            _mediaProjection.stop();
-            _mediaProjection = null;
+        MediaProjection projection = _mediaProjection;
+        _mediaProjection = null;
+        Runnable releaseProjection = () -> {
+            if (projection != null) {
+                try {
+                    projection.stop();
+                } catch (RuntimeException e) {
+                    Log.w(TAG, "Could not stop media projection", e);
+                }
+            }
+        };
+        if (mHyperionEncoder != null) {
+            mHyperionEncoder.stopRecording(releaseProjection);
+        } else {
+            releaseProjection.run();
         }
     }
 

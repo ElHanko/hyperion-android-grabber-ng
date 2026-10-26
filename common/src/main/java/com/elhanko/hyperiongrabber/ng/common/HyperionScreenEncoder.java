@@ -25,13 +25,14 @@ public class HyperionScreenEncoder extends HyperionScreenEncoderBase {
     private static final String TAG = "HyperionScreenEncoder";
     private static final boolean DEBUG = false;
     private VirtualDisplay mVirtualDisplay;
-    private ImageReader mImageReader;
+    private volatile ImageReader mImageReader;
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     HyperionScreenEncoder(final HyperionThread.HyperionThreadListener listener,
                            final MediaProjection projection, final int width, final int height,
-                           final int density, HyperionGrabberOptions options) {
-        super(listener, projection, width, height, density, options);
+                           final int density, HyperionGrabberOptions options,
+                           final int shutdownTimeoutMs) {
+        super(listener, projection, width, height, density, options, shutdownTimeoutMs);
 
         try {
             prepare();
@@ -56,40 +57,82 @@ public class HyperionScreenEncoder extends HyperionScreenEncoderBase {
 
     @Override
     public void stopRecording() {
+        stopRecording(null);
+    }
+
+    void stopRecording(Runnable onStopped) {
         if (DEBUG) Log.i(TAG, "stopRecording Called");
-        setCapturing(false);
-        mVirtualDisplay.release();
-        mHandler.getLooper().quit();
-        clearAndDisconnect();
-        if (mImageReader != null) {
-            mImageReader.close();
-            mImageReader = null;
+        if (!mStopRequested.compareAndSet(false, true)) {
+            return;
         }
+        setCapturing(false);
+        clearAndDisconnect(() -> {
+            VirtualDisplay display = mVirtualDisplay;
+            mVirtualDisplay = null;
+            try {
+                if (display != null) {
+                    display.release();
+                }
+            } catch (RuntimeException e) {
+                Log.w(TAG, "Could not release virtual display", e);
+            }
+            ImageReader reader = mImageReader;
+            mImageReader = null;
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+            } catch (RuntimeException e) {
+                Log.w(TAG, "Could not close image reader", e);
+            } finally {
+                try {
+                    if (onStopped != null) {
+                        onStopped.run();
+                    }
+                } finally {
+                    mHandler.getLooper().quit();
+                }
+            }
+        });
     }
 
     @Override
     public void resumeRecording() {
         if (DEBUG) Log.i(TAG, "resumeRecording Called");
+        if (mStopRequested.get()) {
+            return;
+        }
         if (!isCapturing() && mImageReader != null) {
             if (DEBUG) Log.i(TAG, "Resuming reading images");
-            Image img = mImageReader.acquireNextImage();
+            // Keep status synchronous; access reader buffers on the capture handler.
             setCapturing(true);
-            if (img != null) {
-                img.close();
-            }
+            mHandler.post(() -> {
+                if (!mStopRequested.get() && mImageReader != null) {
+                    Image img = mImageReader.acquireNextImage();
+                    if (img != null) {
+                        img.close();
+                    }
+                }
+            });
         }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void setOrientation(int orientation) {
-        if (mVirtualDisplay != null && orientation != mCurrentOrientation) {
-            mCurrentOrientation = orientation;
-            mIsCapturing = false;
-            mVirtualDisplay.resize(getGrabberWidth(), getGrabberHeight(), mDensity);
-            mImageReader.close();
-            setImageReader();
+        if (mStopRequested.get()) {
+            return;
         }
+        mHandler.post(() -> {
+            if (!mStopRequested.get() && mVirtualDisplay != null
+                    && orientation != mCurrentOrientation) {
+                mCurrentOrientation = orientation;
+                mIsCapturing = false;
+                mVirtualDisplay.resize(getGrabberWidth(), getGrabberHeight(), mDensity);
+                mImageReader.close();
+                setImageReader();
+            }
+        });
     }
 
     private VirtualDisplay.Callback mDisplayCallback = new VirtualDisplay.Callback() {

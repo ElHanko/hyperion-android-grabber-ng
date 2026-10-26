@@ -4,17 +4,23 @@ import android.content.res.Configuration;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.util.Log;
 
 import com.elhanko.hyperiongrabber.ng.common.network.HyperionThread;
 import com.elhanko.hyperiongrabber.ng.common.util.BorderProcessor;
 import com.elhanko.hyperiongrabber.ng.common.util.HyperionGrabberOptions;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class HyperionScreenEncoderBase {
     static final boolean DEBUG = false;
     private static final String TAG = "ScreenEncoderBase";
     private final int CLEAR_COMMAND_DELAY_MS = 100;
     private final int INIT_ORIENTATION;
+    private final int mShutdownTimeoutMs;
+    private final Handler mDisconnectHandler = new Handler(Looper.getMainLooper());
+    private final AtomicBoolean mDisconnectStarted = new AtomicBoolean();
 
     final boolean mRemoveBorders = false; // enables detecting borders for standard grabbing - disabled for now
     final boolean mAvgColor;
@@ -22,17 +28,20 @@ public class HyperionScreenEncoderBase {
     final int mFrameRate;
     final int mHeightScaled;
     final int mDensity;
-    boolean mIsCapturing = false;
+    final AtomicBoolean mStopRequested = new AtomicBoolean();
+    volatile boolean mIsCapturing = false;
     int mCurrentOrientation;
 
     BorderProcessor mBorderProcessor;
     Handler mHandler;
     MediaProjection mMediaProjection;
     HyperionThread.HyperionThreadListener mListener;
+    private final Runnable disconnectRunner = () -> new Thread(this::disconnectOnce).start();
 
     HyperionScreenEncoderBase(final HyperionThread.HyperionThreadListener listener,
                               final MediaProjection projection, int width, int height,
-                              final int density, HyperionGrabberOptions options) {
+                              final int density, HyperionGrabberOptions options,
+                              final int shutdownTimeoutMs) {
         if (DEBUG) Log.d(TAG, "Encoder starting");
 
         mListener = listener;
@@ -40,6 +49,7 @@ public class HyperionScreenEncoderBase {
         mDensity = density;
         mFrameRate = options.getFrameRate();
         mAvgColor = options.useAverageColor();
+        mShutdownTimeoutMs = shutdownTimeoutMs;
 
         int blackThreshold = options.getBlackThreshold();
         mBorderProcessor = new BorderProcessor(blackThreshold);
@@ -80,14 +90,58 @@ public class HyperionScreenEncoderBase {
         public void run() {
             if (DEBUG) Log.d(TAG, "Clearing LEDs and disconnecting");
             try {
-                Thread.sleep(CLEAR_COMMAND_DELAY_MS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                if (!mDisconnectStarted.get()) {
+                    mListener.clear();
+                }
+            } catch (RuntimeException e) {
+                Log.w(TAG, "Could not clear grabber priority", e);
+            } finally {
+                disconnectOnce();
             }
-            mListener.clear();
-            mListener.disconnect();
         }
     };
+
+    private void disconnectOnce() {
+        if (mDisconnectStarted.compareAndSet(false, true)) {
+            try {
+                mListener.disconnect();
+            } catch (RuntimeException e) {
+                Log.w(TAG, "Could not disconnect grabber", e);
+            } finally {
+                mDisconnectHandler.removeCallbacks(disconnectRunner);
+            }
+        }
+    }
+
+    private void startCleanupWorker(Runnable rejectedCleanup) {
+        new Thread(() -> {
+            if (rejectedCleanup == null) {
+                clearAndDisconnectRunner.run();
+                return;
+            }
+
+            disconnectOnce();
+            Thread captureThread = mHandler.getLooper().getThread();
+            boolean interrupted = false;
+            // A rejected post can leave a callback running on the quitting looper.
+            for (;;) {
+                try {
+                    captureThread.join();
+                    break;
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                    Log.w(TAG, "Interrupted while waiting for capture thread to stop", e);
+                }
+            }
+            try {
+                rejectedCleanup.run();
+            } finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }).start();
+    }
 
     private Runnable clearLightsRunner = new Runnable() {
         public void run() {
@@ -97,24 +151,40 @@ public class HyperionScreenEncoderBase {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            mListener.clear();
+            if (!mStopRequested.get()) {
+                mListener.clear();
+            }
         }
     };
 
     public void clearLights() {
-        new Thread(clearLightsRunner).start();
+        if (!mStopRequested.get()) {
+            new Thread(clearLightsRunner).start();
+        }
     }
 
-    void clearAndDisconnect() {
-        new Thread(clearAndDisconnectRunner).start();
+    void clearAndDisconnect(Runnable releaseResources) {
+        // Closing the socket can unblock a frame before the capture handler drains.
+        if (!mDisconnectHandler.postDelayed(disconnectRunner, mShutdownTimeoutMs)) {
+            Log.w(TAG, "Disconnect handler rejected timeout; starting disconnect worker");
+            disconnectRunner.run();
+        }
+        // Keep worker startup and resource release in one accepted capture task.
+        if (!mHandler.post(() -> {
+            startCleanupWorker(null);
+            releaseResources.run();
+        })) {
+            Log.w(TAG, "Capture handler rejected cleanup; waiting on cleanup worker");
+            startCleanupWorker(releaseResources);
+        }
     }
 
     public boolean isCapturing() {
-        return mIsCapturing;
+        return !mStopRequested.get() && mIsCapturing;
     }
 
     public void setCapturing(boolean isCapturing) {
-        mIsCapturing = isCapturing;
+        mIsCapturing = isCapturing && !mStopRequested.get();
     }
 
     public void sendStatus() {
