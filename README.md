@@ -18,6 +18,14 @@ Phase 3B delivered the experimental FlatBuffer opt-in. Protocol Buffers remains
 the stable default. See the [changelog](CHANGELOG.md) and
 [roadmap](docs/roadmap.md).
 
+TV version `2.3.0` / versionCode `2300` completed release validation on October 27,
+2026. Work Packages A and B are complete, including lifecycle and Fire TV
+reliability fixes and the targeted RGB conversion simplification. The final APK
+build, signature verification, and in-place update on `AFTKRT` passed, with
+retained settings, working screen capture, and LED color output. See the
+[changelog](CHANGELOG.md#230---2026-10-27) for the validation scope. The historical
+Mobile module stays at `2.2.0` / `1200`.
+
 ## Features
 
 - Screen capture through the stable Protocol Buffers transport
@@ -41,9 +49,12 @@ recommended replacement for Protocol Buffers.
 | Application ID | `com.elhanko.hyperiongrabber.ng` |
 | Hyperion reference | Hyperion NG 2.2.1 |
 | Transport | Stable Protocol Buffers ProtoServer transport with an optional experimental FlatBuffer transport |
-| `minSdk` | 21 |
+| TV `minSdk` | 25 (Fire OS 6+) |
 | `compileSdk` | 36 |
-| `targetSdk` | 26 (released baseline; changes require Fire OS justification) |
+| TV `targetSdk` | 30 |
+
+These SDK values apply to TV `2.3.0`. The published TV
+`2.2.0` baseline used `minSdk 21`, `targetSdk 26`, and `compileSdk 36`.
 
 Stage 7 provided comprehensive FlatBuffer hardware validation on an Amazon Fire
 TV while the tested app still carried version `2.1.1` / TV versionCode `2101`.
@@ -142,6 +153,17 @@ adapter and factory tests, lifecycle and reconnect tests, and settings and
 confirmation-dialog contracts. They also cover the existing Protocol Buffers
 transport and Android NSD discovery.
 
+Work Package A extends JVM transport lifecycle coverage and adds Android
+instrumentation tests for capture resources, service metadata, and platform
+contracts. Work Package B adds seven RGB conversion JVM tests. On October 27,
+2026, the operator confirmed passing Common and TV JVM tasks for `7462cf9` and
+the seven RGB tests for `d2e33c3`. The instrumentation tests were compiled but
+not executed. Signed development builds of both commits also passed the
+documented AFTKRT checks while still labeled `2.2.0` / `2200`. The final
+`2.3.0` / `2300` build, signature, in-place update, retained settings, capture,
+and LED color output were subsequently confirmed separately. See the
+[2.3.0 validation record](CHANGELOG.md#230---2026-10-27) for scope and limitations.
+
 The opt-in Protocol Buffers and FlatBuffer real-server tests are separate from
 the regular matrix. The FlatBuffer runner requires an explicitly selected server:
 
@@ -165,7 +187,6 @@ Protocol Buffers, FlatBuffer, Stop/Clear, and application-restart regressions.
 - One capture session uses exactly one selected transport.
 - Hardware validation covers the documented Fire TV reference device only.
 - Mobile hardware validation has not been performed; Mobile is not a future support target.
-- `targetSdk 26` remains the released baseline; future changes require a concrete Fire OS or distribution need.
 
 ## Project history
 

@@ -1,5 +1,94 @@
 # Changelog
 
+## [2.3.0] - 2026-10-27
+
+TV versionCode: `2300`<br>
+Release version: `2.3.0`<br>
+The historical Mobile module remains at `2.2.0` / `1200`.
+
+### Added
+
+- Android instrumentation regression tests for image release, capture cleanup,
+  service status and start-request metadata, boot entry points, and platform
+  contracts. These tests were compiled but have not been executed.
+- JVM regression coverage for transport shutdown and late callbacks, plus seven
+  RGB conversion tests covering channel order, unsigned values, row/pixel
+  strides, padding, border cropping, and average-color behavior.
+
+### Changed
+
+- TV now uses `minSdk 25` (Fire OS 6+) and `targetSdk 30`; `compileSdk 36`,
+  application ID, and release signing remain unchanged.
+- Declared the Foreground Service permission and `mediaProjection` service type.
+- Replaced `ByteArrayOutputStream` in RGB and average-color conversion with
+  directly filled byte arrays, removing the extra output-array copy while
+  preserving RGB values, dimensions, order, strides, and border handling.
+- Removed the checksum assertion for the locally generated FlatBuffers Java JAR;
+  pinned toolchain versions and source checksum checks remain in place.
+
+### Fixed
+
+- Release acquired images on processing success, discarded frames, and exceptions.
+- Handle system-initiated MediaProjection and VirtualDisplay termination through
+  session cleanup. Release capture resources and projection callbacks on Stop,
+  startup failure, and system termination, with idempotent cleanup and bounded
+  best-effort own-priority Clear before disconnect.
+- Separate active-session state from current capture/transport connectivity;
+  guard duplicate, expired, and overlapping start requests and prevent automatic
+  service recreation from reusing an old projection permission.
+- Stop reconnect on intentional shutdown and ignore late transport callbacks;
+  report the actual connection state during reconnect.
+- Improve Fire TV notification navigation, status synchronization, accessible
+  Start/Stop labels, capture-start errors, and repeated error-message handling.
+- Restrict internal service, receiver, boot activity, and TV setup activity
+  exports; stop idle service instances and give the boot entry a new-task flag.
+
+### Development validation
+
+The operator confirmed the following development validation on October 27, 2026.
+Both development builds still used `2.2.0` / TV versionCode `2200`; their test
+scope is recorded separately from the final `2.3.0` / `2300` validation below.
+
+- Work Package A, commit `7462cf9`: `:common:testDebugUnitTest` and
+  `:tv:testDebugUnitTest` passed. `:common:assembleDebugAndroidTest` compiled the
+  instrumentation tests successfully; they were not executed. A signed TV
+  release build also succeeded.
+- Work Package A hardware: signed in-place update with retained settings;
+  Start, Stop, Clear, restart, background capture after Home, and returning to
+  the running app without another screen-sharing permission request passed.
+  Capture passed with Protocol Buffers and FlatBuffer. Protocol Buffers also
+  passed connection loss, automatic reconnect with resumed LED output, Stop
+  during a server interruption, no reconnect after intentional Stop, and a
+  subsequent capture restart.
+- Work Package B, commit `d2e33c3`: all seven RGB conversion tests passed with
+  `:common:testDebugUnitTest --tests com.elhanko.hyperiongrabber.ng.common.HyperionScreenEncoderPixelTest`.
+  The signed TV release build with `:tv:assembleRelease` succeeded. In-place
+  installation on the same Fire TV passed; capture and LED color output
+  continued to work after the RGB simplification.
+- Hardware environment: Amazon Fire TV Stick 4K Max, `AFTKRT` / `karat`, Fire OS 8,
+  Android API 30. The historically recorded Fire OS version is `8.1.8.0`; its
+  exact patch version was not rechecked for these development runs.
+
+### Final 2.3.0 release validation
+
+The operator confirmed the following completed release checks on October 27, 2026:
+
+- Successfully built the final TV `2.3.0` / versionCode `2300` APK.
+- Verified the APK signature.
+- Successfully tested the in-place update on Fire TV `AFTKRT`, with retained
+  settings.
+- Confirmed screen capture and LED color output after the update.
+
+Work Packages A and B are complete.
+
+### Known limitations
+
+- Android instrumentation tests have not been executed. The confirmed hardware
+  checks do not include system-initiated MediaProjection termination.
+- No performance measurements or validation of other Fire TV models have been
+  performed. Protocol Buffers remains the stable default; FlatBuffer remains
+  experimental, without automatic fallback.
+
 ## [2.2.0] - 2026-08-03
 
 TV versionCode: `2200`<br>

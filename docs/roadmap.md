@@ -42,7 +42,8 @@ every component.
 
 | Status | Meaning |
 | --- | --- |
-| Completed | Implemented, validated to the documented extent, and released. |
+| Completed | Scope completed and validated to the documented extent; release status is recorded separately. |
+| Implemented | Code is merged into `main`; validation status is recorded for each work package. |
 | In progress | Work is underway, but the work package has not met its completion and validation criteria. |
 | Planned | Future work; implementation and validation are not complete. |
 | Conditional | Work proceeds only if measurements justify it. |
@@ -59,23 +60,31 @@ The Phase 1 through Phase 3 sections below preserve the historical scope,
 including Mobile artifacts and Android TV terminology. They do not extend the
 future development target beyond Fire TV.
 
-## Future work overview
+## Current work overview
 
 | Work | Status | Goal |
 | --- | --- | --- |
-| Work Package A | Planned | Fire TV reliability and lifecycle correctness |
-| Work Package B | Planned | Measure and selectively improve capture |
+| Work Package A | Completed | Fire TV reliability and lifecycle correctness validated for 2.3.0 |
+| Work Package B | Completed | Existing capture pipeline retained; RGB copy removed and validated on Fire TV |
 | Optional architecture decision and larger engine changes | Conditional | Address a measured requirement that targeted changes cannot reasonably meet |
 
-These work packages replace the former planned Phases 4 through 7. They do not
-imply that implementation has started.
+These work packages replace the former planned Phases 4 through 7. Work Package A
+and the targeted RGB simplification from Work Package B are merged into `main`
+and included in the validated TV version `2.3.0`. Both work packages are complete.
 
 ## Version strategy
 
-`2.2.0` remains the latest documented release and validated baseline. Future
-patch or minor versions depend on the changes actually delivered. There are no
-fixed release dates or predetermined version milestones. `3.0.0` is not a goal
-in itself and does not justify an engine rewrite.
+TV version `2.3.0` / versionCode `2300` is the latest validated TV version, with
+release validation completed on October 27, 2026. The final APK build, signature
+verification, and in-place update on Fire TV `AFTKRT` passed. Settings were
+retained, and screen capture and LED color output worked after the update.
+Earlier development tests used `2.2.0` / `2200` and are recorded separately in
+the [2.3.0 changelog](../CHANGELOG.md#230---2026-10-27). Version `2.2.0` remains a
+historical published release; the Mobile module remains at `2.2.0` / `1200`.
+
+Later patch or minor versions depend on the changes actually delivered. There
+are no fixed release dates. `3.0.0` is not a goal in itself and does not justify
+an engine rewrite.
 
 ## Phase 1 – Foundation and signed package migration
 
@@ -286,7 +295,33 @@ Phase 3 and Phase 3B are complete. Version `2.2.0` was published and tagged as
 
 ## Work Package A – Fire TV reliability and lifecycle
 
-**Status:** Planned
+**Status:** Completed; validated for version `2.3.0`.
+
+### Implementation and validation status
+
+The lifecycle and Fire TV reliability changes are merged into `main`, including
+exception-safe image release, idempotent capture cleanup, MediaProjection and
+VirtualDisplay termination handling, guarded session startup, accurate session
+and reconnect status, notification/error improvements, and private internal
+components. TV now uses `minSdk 25` and `targetSdk 30`, with `compileSdk 36`,
+application identity, and signing unchanged.
+
+For commit `7462cf9`, the operator confirmed successful Common and TV JVM tasks,
+instrumentation-test compilation, and a signed TV release build on October 27,
+2026. The instrumentation tests were not executed. Development hardware checks
+passed on `AFTKRT` / `karat`, Fire OS 8 / API 30: signed in-place update with
+retained settings, Start/Stop/Clear/restart, Home/background capture, return
+without another screen-sharing permission request, both transports, and
+Protocol Buffers connection loss/reconnect and intentional Stop during a server
+interruption. Fire OS `8.1.8.0` is the historical patch version and was not
+rechecked during these runs.
+
+The tested development build still used `2.2.0` / `2200`. The final `2.3.0` / `2300`
+APK build, signature verification, and in-place update on `AFTKRT` subsequently
+passed, with retained settings, working capture, and LED color output.
+System-initiated MediaProjection termination is not included in the confirmed
+hardware checks. See the [2.3.0 changelog](../CHANGELOG.md#230---2026-10-27) for
+the recorded validation scope and limitations.
 
 ### Goal and scope
 
@@ -313,10 +348,10 @@ Historical beta changes are evidence to evaluate, not patches to copy blindly.
 Keep, replace, or discard them according to current Fire TV requirements and
 observed behavior.
 
-SDK increases are not automatic requirements. Do not select a new `targetSdk`
-in advance. Justify any SDK change through the supported Fire TV platform and
-chosen distribution channels, distinguishing current requirements from behavior
-that changes only with a higher target SDK.
+Further SDK increases are not automatic requirements. Justify future SDK changes
+through the supported Fire TV platform and chosen distribution channels,
+distinguishing current requirements from behavior that changes only with a
+higher target SDK.
 
 Fix functional UI and accessibility problems within the affected flows, including
 status, errors, D-pad interaction, and accessible control labels. Use existing
@@ -339,19 +374,34 @@ separate comprehensive UI redesign or localization phase is planned.
 - Changed lifecycle and transport behavior is covered by proportionate automated
   checks and actual Fire TV validation, with the device, Fire OS version, and
   untested cases recorded explicitly.
-- Before release, verify that a signed in-place update preserves application
-  identity, settings, and the validated upgrade path.
+- The final `2.3.0` APK signature was verified, and its in-place update passed
+  with retained settings, working capture, and LED color output.
 
 ## Work Package B – Measure and selectively improve capture
 
-**Status:** Planned
+**Status:** Completed; validated for version `2.3.0`.
 
-### Goal and method
+### Implemented scope and outcome
 
-Evaluate the existing pipeline using real Fire TV measurements. Start from the
-validated baseline; complete the relevant lifecycle fixes from Work Package A
-before relying on measurements affected by those fixes. Correctness fixes do
-not depend on completing a performance study.
+Commit `d2e33c3` replaces `ByteArrayOutputStream` in RGB and average-color
+conversion with directly filled byte arrays, removing the extra output-array
+copy. RGB values, dimensions, order, strides, border handling, and average-color
+behavior remain unchanged; capture lifecycle and transports were not changed.
+
+On October 27, 2026, the operator confirmed all seven targeted RGB JVM tests and
+the signed TV release build passed. In-place installation on the same `AFTKRT`
+Fire TV passed, with capture and LED color output continuing to work. This build
+also still used `2.2.0` / `2200`. The final `2.3.0` / `2300` APK build, signature,
+in-place update, retained settings, capture, and LED color output have since
+passed release validation. No performance measurements were performed, so no
+measured CPU, memory, frame-rate, or latency improvement is claimed.
+Further pipeline changes are not planned because no concrete need was identified.
+
+### Method for future work if a concrete need arises
+
+For further performance work, evaluate the existing pipeline using real Fire TV
+measurements and the lifecycle fixes already merged from Work Package A.
+Correctness fixes do not depend on completing a performance study.
 
 Use the smallest reproducible measurement set needed to answer a concrete
 question. As relevant, record:
@@ -373,15 +423,14 @@ RGB32 conversion, zero-copy pipeline, adaptive frame rate, and a new capture
 engine are not predetermined requirements. Any such change needs evidence that
 it solves a relevant problem at proportionate cost.
 
-### Completion criteria
+### Completion outcome
 
-Document the relevant measurements and either the demonstrated benefit of each
-selected change or why no change is justified. Add targeted checks for changed
-processing logic and validate affected behavior on Fire TV. Preserve intentional
-Stop, own-priority Clear, controlled reconnect, and the stable Protocol Buffers
-regression reference.
+The existing capture pipeline was reviewed, the unnecessary RGB array copy was
+removed, and the result passed targeted JVM tests and Fire TV validation. No
+further optimizations are planned without a concrete need. Work Package B and
+the documented final `2.3.0` release validation are complete.
 
-A valid outcome is:
+The outcome is:
 
 **The existing capture pipeline is sufficient; no further changes are needed.**
 
