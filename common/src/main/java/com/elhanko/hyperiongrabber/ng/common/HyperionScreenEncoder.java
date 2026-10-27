@@ -16,7 +16,6 @@ import com.elhanko.hyperiongrabber.ng.common.network.HyperionThread;
 import com.elhanko.hyperiongrabber.ng.common.util.BorderProcessor;
 import com.elhanko.hyperiongrabber.ng.common.util.HyperionGrabberOptions;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
 public class HyperionScreenEncoder extends HyperionScreenEncoderBase {
@@ -198,14 +197,13 @@ public class HyperionScreenEncoder extends HyperionScreenEncoderBase {
         }
     };
 
-    private byte[] getPixels(ByteBuffer buffer, int width, int height, int rowStride,
-                             int pixelStride, int firstX, int firstY){
+    static byte[] getPixels(ByteBuffer buffer, int width, int height, int rowStride,
+                            int pixelStride, int firstX, int firstY) {
         int rowPadding = rowStride - width * pixelStride;
         int offset = 0;
 
-        ByteArrayOutputStream bao = new ByteArrayOutputStream(
-                (width - firstX * 2) * (height - firstY * 2) * 3
-        );
+        byte[] pixels = new byte[(width - firstX * 2) * (height - firstY * 2) * 3];
+        int outputOffset = 0;
 
         for (int y = 0, compareHeight = height - firstY - 1; y < height; y++, offset += rowPadding) {
             if (y < firstY || y > compareHeight) {
@@ -214,23 +212,21 @@ public class HyperionScreenEncoder extends HyperionScreenEncoderBase {
             }
             for (int x = 0, compareWidth = width - firstX - 1; x < width; x++, offset += pixelStride) {
                 if (x < firstX || x > compareWidth) continue;
-                bao.write(buffer.get(offset) & 0xff); // R
-                bao.write(buffer.get(offset + 1) & 0xff); // G
-                bao.write(buffer.get(offset + 2) & 0xff); // B
+                pixels[outputOffset++] = buffer.get(offset); // R
+                pixels[outputOffset++] = buffer.get(offset + 1); // G
+                pixels[outputOffset++] = buffer.get(offset + 2); // B
             }
         }
 
-        return bao.toByteArray();
+        return pixels;
     }
 
-    private byte[] getAverageColor(ByteBuffer buffer, int width, int height, int rowStride,
-                                   int pixelStride, int firstX, int firstY) {
+    static byte[] getAverageColor(ByteBuffer buffer, int width, int height, int rowStride,
+                                  int pixelStride, int firstX, int firstY) {
         long totalRed = 0, totalGreen = 0, totalBlue = 0;
         int rowPadding = rowStride - width * pixelStride;
         int pixelCount = 0;
         int offset = 0;
-
-        ByteArrayOutputStream bao = new ByteArrayOutputStream(3);
 
         for (int y = 0, compareHeight = height - firstY - 1; y < height; y++, offset += rowPadding) {
             if (y < firstY || y > compareHeight) {
@@ -246,11 +242,11 @@ public class HyperionScreenEncoder extends HyperionScreenEncoderBase {
             }
         }
 
-        bao.write((int) totalRed / pixelCount);
-        bao.write((int) totalGreen / pixelCount);
-        bao.write((int) totalBlue / pixelCount);
-
-        return bao.toByteArray();
+        return new byte[] {
+                (byte) ((int) totalRed / pixelCount),
+                (byte) ((int) totalGreen / pixelCount),
+                (byte) ((int) totalBlue / pixelCount)
+        };
     }
 
     private void sendImage(Image img) {
